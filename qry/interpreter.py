@@ -25,6 +25,9 @@ _eager_unop_lookup = {
 	UnaryOp.NEGATE_ARITH: operator.neg,
 }
 
+class InterpreterError(Exception):
+	pass
+
 class Interpreter:
 	state: Dict[str, Any] = dict()
 
@@ -48,13 +51,13 @@ class Interpreter:
 			rhs = self.eval(expr.rhs)
 			return _eager_binop_lookup[expr.op](lhs, rhs)
 
-		raise Exception(f'unsupported binary op: {expr.op}')
+		raise InterpreterError(f'unsupported binary op: {expr.op}')
 
 	def eval_UnaryOpExpr(self, expr: UnaryOpExpr) -> Any:
 		arg = self.eval(expr.arg)
 		return _eager_unop_lookup[expr.op](arg)
 
-		raise Exception(f'unsupported unary op: {expr.op}')
+		raise InterpreterError(f'unsupported unary op: {expr.op}')
 
 	def eval_BoolLiteral(self, expr: BoolLiteral) -> Any:
 		return expr.value
@@ -69,6 +72,9 @@ class Interpreter:
 		return expr.value
 
 	def eval_IdentExpr(self, expr: IdentExpr) -> Any:
+		if expr.value not in self.state:
+			raise InterpreterError(f'not found: {expr.value}')
+
 		return self.state[expr.value]
 
 	def eval_NullLiteral(self, expr: NullLiteral) -> Any:
