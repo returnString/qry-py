@@ -15,6 +15,7 @@ expressions_with_results = [
 	('false', False),
 	('!true', False),
 	('!false', True),
+	('-1', -1),
 	('null', Null()),
 	(
 	'''

@@ -21,7 +21,7 @@ literal: "null" -> null_literal
 
 RASSIGN_OP: "->"
 LASSIGN_OP: "<-"
-NEGATE_OP: "!"
+NEGATE_OP: "!" | "-"
 AND_OP: "&&" | "&"
 OR_OP: "||" | "|"
 COMPARE_OP: "==" | "!="
@@ -32,7 +32,7 @@ ACCESS_OP: "."
 arg: expr | IDENT "=" expr
 arglist: arg? ("," arg)* ","?
 
-%import common.SIGNED_INT -> INT
+%import common.INT
 %import common.FLOAT
 %import common.ESCAPED_STRING -> STRING
 %import common.CNAME -> IDENT
