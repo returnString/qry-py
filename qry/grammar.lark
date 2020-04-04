@@ -35,9 +35,6 @@ ADD_OP: "-" | "+"
 MUL_OP: "/" | "*"
 ACCESS_OP: "."
 
-arg: expr | IDENT "=" expr
-arglist: arg? ("," arg)* ","?
-
 %import common.INT
 %import common.FLOAT
 %import common.ESCAPED_STRING -> STRING
