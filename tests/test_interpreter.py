@@ -4,6 +4,7 @@ import pytest
 
 from qry import Parser, Interpreter
 from qry.runtime import BuiltinFunction, Null
+from .eval_helpers import eval, eval_single
 
 expressions_with_results = [
 	('0', 0),
@@ -68,23 +69,12 @@ expressions_with_final_state = [
 	}),
 ]
 
-parser = Parser()
-
-def _eval(source: str, interpreter: Interpreter = Interpreter()) -> List[Any]:
-	ast = parser.parse(source)
-	return [interpreter.eval(e) for e in ast]
-
-def _eval_single(source: str, interpreter: Interpreter = Interpreter()) -> Any:
-	results = _eval(source, interpreter)
-	assert len(results) == 1
-	return results[0]
-
 @pytest.mark.parametrize("source, expected_result", expressions_with_results)
 def test_expression_results(source: str, expected_result: Any) -> None:
 	if not isinstance(expected_result, list):
 		expected_result = [expected_result]
 
-	results = _eval(source)
+	results = eval(source)
 	result_types = [type(r) for r in results]
 	expected_types = [type(r) for r in expected_result]
 
@@ -94,7 +84,7 @@ def test_expression_results(source: str, expected_result: Any) -> None:
 @pytest.mark.parametrize("source, expected_state", expressions_with_final_state)
 def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
 	interpreter = Interpreter()
-	_eval(source, interpreter)
+	eval(source, interpreter)
 	for k, expected_value in expected_state.items():
 		assert k in interpreter.global_env.state
 		value = interpreter.global_env.state[k]
@@ -104,7 +94,7 @@ def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
 def test_builtin_eval() -> None:
 	interpreter = Interpreter()
 	interpreter.global_env.state['sum'] = BuiltinFunction(['x', 'y'], lambda x, y: x + y)
-	assert _eval_single('sum(1, 2)', interpreter) == 3
+	assert eval_single('sum(1, 2)', interpreter) == 3
 
 def test_library_load() -> None:
 	class TestLib:
@@ -113,5 +103,5 @@ def test_library_load() -> None:
 
 	interpreter = Interpreter()
 	interpreter.load_library(TestLib(), True)
-	assert _eval_single('my_mul_method(2, 5)', interpreter) == 10
-	assert _eval_single('test.my_mul_method(2, 5)', interpreter) == 10
+	assert eval_single('my_mul_method(2, 5)', interpreter) == 10
+	assert eval_single('test.my_mul_method(2, 5)', interpreter) == 10
