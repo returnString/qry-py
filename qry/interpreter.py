@@ -1,8 +1,10 @@
 from typing import Dict, Any, List
 import operator
+import inspect
 
 from .syntax import *
 from .runtime import *
+from .stdlib.core import CoreLib
 
 _eager_binop_lookup = {
 	BinaryOp.ADD: operator.add,
@@ -26,9 +28,17 @@ class Interpreter:
 
 	def __init__(self) -> None:
 		self.global_env = Environment('global', dict())
+		self.load_library(CoreLib())
 
 	def eval(self, expr: Expr) -> Any:
 		return self.eval_in_env(expr, self.global_env)
+
+	def load_library(self, library: Any) -> None:
+		public_methods = [(name, m) for name, m in inspect.getmembers(library, inspect.ismethod)
+			if not name.startswith('_')]
+
+		funcs = {name: BuiltinFunction.from_func(func) for name, func in public_methods}
+		self.global_env.state.update(funcs)
 
 	def eval_in_env(self, expr: Expr, env: Environment) -> Any:
 		eval_func = getattr(self, f'eval_{type(expr).__name__}')

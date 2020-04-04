@@ -105,3 +105,12 @@ def test_builtin_eval() -> None:
 	interpreter = Interpreter()
 	interpreter.global_env.state['sum'] = BuiltinFunction(['x', 'y'], lambda x, y: x + y)
 	assert _eval_single('sum(1, 2)', interpreter) == 3
+
+def test_library_load() -> None:
+	class TestLib:
+		def my_mul_method(self, arg1: int, arg2: int) -> int:
+			return arg1 * arg2
+
+	interpreter = Interpreter()
+	interpreter.load_library(TestLib())
+	assert _eval_single('my_mul_method(2, 5)', interpreter) == 10

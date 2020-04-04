@@ -1,5 +1,6 @@
 from typing import List, Any, Dict, Callable
 from dataclasses import dataclass, field
+import inspect
 
 from .syntax import Expr, FuncExpr
 
@@ -35,3 +36,9 @@ class BuiltinFunction(FunctionBase):
 
 	def __repr__(self) -> str:
 		return '[builtin] ' + super().__repr__()
+
+	@classmethod
+	def from_func(cls, func: Callable[..., Any]) -> 'BuiltinFunction':
+		# skip self
+		args = inspect.getfullargspec(func).args[1:]
+		return cls(args, func)
