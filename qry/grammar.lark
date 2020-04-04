@@ -16,8 +16,14 @@ literal: "null" -> null_literal
 ?compare_expr: add_expr (COMPARE_OP add_expr)*
 ?add_expr: mul_expr (ADD_OP mul_expr)*
 ?mul_expr: access_expr (MUL_OP access_expr)*
-?access_expr: primary (ACCESS_OP primary)*
-?primary: "(" expr ")" | literal | IDENT -> ident_expr
+?access_expr: call_expr (ACCESS_OP call_expr)*
+?call_expr: primary call_arglist? | call_arglist -> paren_expr
+?primary: literal | IDENT -> ident_expr | func_expr
+
+args_def: IDENT? ("," IDENT)* ","?
+call_arglist: "(" expr? ("," expr)* ","? ")"
+block_expr: "{" expr* "}"
+func_expr: "fn" "(" args_def ")" block_expr
 
 RASSIGN_OP: "->"
 LASSIGN_OP: "<-"

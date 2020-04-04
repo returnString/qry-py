@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
+from typing import List
 
 @dataclass
 class SourceInfo:
@@ -105,3 +106,20 @@ class IdentExpr(Expr):
 class NullLiteral(Expr):
 	def render(self) -> str:
 		return 'null'
+
+@dataclass
+class FuncExpr(Expr):
+	args: List[str]
+	body: List[Expr]
+
+	def render(self) -> str:
+		body = "\n".join([e.render() for e in self.body])
+		return f'fn({", ".join(self.args)}) {{ {body} }}'
+
+@dataclass
+class CallExpr(Expr):
+	func: Expr
+	args: List[Expr]
+
+	def render(self) -> str:
+		return f'{self.func.render()}({", ".join([ a.render() for a in self.args ])})'

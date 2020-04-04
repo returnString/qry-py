@@ -46,6 +46,25 @@ expressions_with_final_state = [
 	'y': 1,
 	'z': 1,
 	}),
+	('''
+	add <- fn(x, y) {
+		x + y
+	}
+
+	x <- add(1, 2)
+	''', {
+	'x': 3
+	}),
+	('''
+	fixed_bonus <- 100
+	add_with_closure <- fn(x, y) {
+		x + y + fixed_bonus
+	}
+
+	x <- add_with_closure(1, 2)
+	''', {
+	'x': 103
+	}),
 ]
 
 parser = Parser()
@@ -70,9 +89,8 @@ def test_expression_results(source: str, expected_result: Any) -> None:
 @pytest.mark.parametrize("source, expected_state", expressions_with_final_state)
 def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
 	interpreter, _ = _eval(source)
-
-	state_types = {k: type(v) for k, v in interpreter.state.items()}
-	expected_types = {k: type(v) for k, v in expected_state.items()}
-
-	assert state_types == expected_types
-	assert interpreter.state == expected_state
+	for k, expected_value in expected_state.items():
+		assert k in interpreter.global_env.state
+		value = interpreter.global_env.state[k]
+		assert type(value) == type(expected_value)
+		assert value == expected_value
