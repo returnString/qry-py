@@ -1,0 +1,44 @@
+start: expr*
+
+literal: "null" -> null_literal
+	| "true" -> bool_literal_true
+	| "false" -> bool_literal_false
+	| STRING -> string_literal
+	| INT -> int_literal
+	| FLOAT -> float_literal
+
+?expr: rassign_expr
+?rassign_expr: lassign_expr (RASSIGN_OP lassign_expr)*
+?lassign_expr: or_expr (LASSIGN_OP or_expr)*
+?or_expr: and_expr (OR_OP and_expr)*
+?and_expr: negate_expr (AND_OP negate_expr)*
+?negate_expr: (NEGATE_OP compare_expr) | compare_expr
+?compare_expr: add_expr (COMPARE_OP add_expr)*
+?add_expr: mul_expr (ADD_OP mul_expr)*
+?mul_expr: access_expr (MUL_OP access_expr)*
+?access_expr: primary (ACCESS_OP primary)*
+?primary: "(" expr ")" | literal | IDENT -> ident_expr
+
+RASSIGN_OP: "->"
+LASSIGN_OP: "<-"
+NEGATE_OP: "!"
+AND_OP: "&&" | "&"
+OR_OP: "||" | "|"
+COMPARE_OP: "==" | "!="
+ADD_OP: "-" | "+"
+MUL_OP: "/" | "*"
+ACCESS_OP: "."
+
+arg: expr | IDENT "=" expr
+arglist: arg? ("," arg)* ","?
+
+%import common.SIGNED_INT -> INT
+%import common.FLOAT
+%import common.ESCAPED_STRING -> STRING
+%import common.CNAME -> IDENT
+%import common.WS
+
+COMMENT: "#" /[^\n]/*
+
+%ignore WS
+%ignore COMMENT
