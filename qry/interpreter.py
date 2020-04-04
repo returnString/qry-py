@@ -84,16 +84,20 @@ class Interpreter:
 
 	def eval_CallExpr(self, expr: CallExpr, env: Environment) -> Any:
 		func = self.eval_in_env(expr.func, env)
-		assert isinstance(func, Function)
 
 		arg_values = [self.eval_in_env(e, env) for e in expr.args]
 
-		func_env = func.environment.child_env('exec')
-		for arg_name, arg_value in zip(func.args, arg_values):
-			func_env.state[arg_name] = arg_value
+		if isinstance(func, Function):
+			func_env = func.environment.child_env('exec')
+			for arg_name, arg_value in zip(func.args, arg_values):
+				func_env.state[arg_name] = arg_value
 
-		ret = None
-		for e in func.body:
-			ret = self.eval_in_env(e, func_env)
+			ret = None
+			for e in func.body:
+				ret = self.eval_in_env(e, func_env)
 
-		return ret
+			return ret
+		elif isinstance(func, BuiltinFunction):
+			return func.func(*arg_values)
+
+		raise InterpreterError('invalid function')

@@ -2,7 +2,8 @@ from typing import Any, List, Tuple, Dict
 
 import pytest
 
-from qry import Parser, Interpreter, Null
+from qry import Parser, Interpreter
+from qry.runtime import BuiltinFunction, Null
 
 expressions_with_results = [
 	('0', 0),
@@ -94,3 +95,9 @@ def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
 		value = interpreter.global_env.state[k]
 		assert type(value) == type(expected_value)
 		assert value == expected_value
+
+def test_builtin_eval() -> None:
+	interpreter = Interpreter()
+	interpreter.global_env.state['sum'] = BuiltinFunction(['x', 'y'], lambda x, y: x + y)
+	ast = parser.parse('sum(1, 2)')
+	assert interpreter.eval(ast[0]) == 3

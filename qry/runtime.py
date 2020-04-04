@@ -1,4 +1,4 @@
-from typing import List, Any, Dict
+from typing import List, Any, Dict, Callable
 from dataclasses import dataclass, field
 
 from .syntax import Expr, FuncExpr
@@ -18,10 +18,20 @@ class Null:
 		return 'null'
 
 @dataclass
-class Function:
+class FunctionBase:
 	args: List[str]
-	body: List[Expr]
-	environment: Environment
 
 	def __repr__(self) -> str:
 		return f'fn({", ".join(self.args)})'
+
+@dataclass
+class Function(FunctionBase):
+	body: List[Expr]
+	environment: Environment
+
+@dataclass
+class BuiltinFunction(FunctionBase):
+	func: Callable[..., Any]
+
+	def __repr__(self) -> str:
+		return '[builtin] ' + super().__repr__()

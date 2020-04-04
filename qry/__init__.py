@@ -1,2 +1,2 @@
-from .interpreter import Interpreter, InterpreterError, Null
+from .interpreter import Interpreter, InterpreterError
 from .parser import Parser
