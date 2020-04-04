@@ -4,7 +4,7 @@ import pytest
 
 from qry import Parser, Interpreter
 from qry.runtime import BuiltinFunction, Null
-from .eval_helpers import eval, eval_single
+from .eval_helpers import eval, eval_single, data_driven_test
 
 expressions_with_results = [
 	('0', 0),
@@ -69,17 +69,7 @@ expressions_with_final_state = [
 	}),
 ]
 
-@pytest.mark.parametrize("source, expected_result", expressions_with_results)
-def test_expression_results(source: str, expected_result: Any) -> None:
-	if not isinstance(expected_result, list):
-		expected_result = [expected_result]
-
-	results = eval(source)
-	result_types = [type(r) for r in results]
-	expected_types = [type(r) for r in expected_result]
-
-	assert result_types == expected_types
-	assert results == expected_result
+test_expression_results = data_driven_test(expressions_with_results)
 
 @pytest.mark.parametrize("source, expected_state", expressions_with_final_state)
 def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
