@@ -70,17 +70,21 @@ expressions_with_final_state = [
 
 parser = Parser()
 
-def _eval(source: str) -> Tuple[Interpreter, List[Any]]:
-	interpreter = Interpreter()
+def _eval(source: str, interpreter: Interpreter = Interpreter()) -> List[Any]:
 	ast = parser.parse(source)
-	return interpreter, [interpreter.eval(e) for e in ast]
+	return [interpreter.eval(e) for e in ast]
+
+def _eval_single(source: str, interpreter: Interpreter = Interpreter()) -> Any:
+	results = _eval(source, interpreter)
+	assert len(results) == 1
+	return results[0]
 
 @pytest.mark.parametrize("source, expected_result", expressions_with_results)
 def test_expression_results(source: str, expected_result: Any) -> None:
 	if not isinstance(expected_result, list):
 		expected_result = [expected_result]
 
-	_, results = _eval(source)
+	results = _eval(source)
 	result_types = [type(r) for r in results]
 	expected_types = [type(r) for r in expected_result]
 
@@ -89,7 +93,8 @@ def test_expression_results(source: str, expected_result: Any) -> None:
 
 @pytest.mark.parametrize("source, expected_state", expressions_with_final_state)
 def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
-	interpreter, _ = _eval(source)
+	interpreter = Interpreter()
+	_eval(source, interpreter)
 	for k, expected_value in expected_state.items():
 		assert k in interpreter.global_env.state
 		value = interpreter.global_env.state[k]
@@ -99,5 +104,4 @@ def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
 def test_builtin_eval() -> None:
 	interpreter = Interpreter()
 	interpreter.global_env.state['sum'] = BuiltinFunction(['x', 'y'], lambda x, y: x + y)
-	ast = parser.parse('sum(1, 2)')
-	assert interpreter.eval(ast[0]) == 3
+	assert _eval_single('sum(1, 2)', interpreter) == 3
