@@ -5,6 +5,7 @@ import inspect
 from .syntax import *
 from .runtime import *
 from .stdlib.core import CoreLib
+from .stdlib.math import MathLib
 
 _eager_binop_lookup = {
 	BinaryOp.ADD: operator.add,
@@ -31,6 +32,7 @@ class Interpreter:
 		self.root_env = Environment('root', dict())
 		self.global_env = self.root_env.child_env('global')
 		self.load_library(CoreLib(), True)
+		self.load_library(MathLib(), False)
 
 	def eval(self, expr: Expr) -> Any:
 		return self.eval_in_env(expr, self.global_env)
