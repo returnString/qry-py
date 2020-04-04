@@ -112,5 +112,6 @@ def test_library_load() -> None:
 			return arg1 * arg2
 
 	interpreter = Interpreter()
-	interpreter.load_library(TestLib())
+	interpreter.load_library(TestLib(), True)
 	assert _eval_single('my_mul_method(2, 5)', interpreter) == 10
+	assert _eval_single('test.my_mul_method(2, 5)', interpreter) == 10

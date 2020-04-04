@@ -42,3 +42,10 @@ class BuiltinFunction(FunctionBase):
 		# skip self
 		args = inspect.getfullargspec(func).args[1:]
 		return cls(args, func)
+
+@dataclass
+class Library:
+	environment: Environment
+
+	def __repr__(self) -> str:
+		return f'library "{self.environment.name}" (object count: {len(self.environment.state)})'

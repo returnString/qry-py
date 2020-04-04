@@ -24,21 +24,34 @@ class InterpreterError(Exception):
 	pass
 
 class Interpreter:
+	root_env: Environment
 	global_env: Environment
 
 	def __init__(self) -> None:
-		self.global_env = Environment('global', dict())
-		self.load_library(CoreLib())
+		self.root_env = Environment('root', dict())
+		self.global_env = self.root_env.child_env('global')
+		self.load_library(CoreLib(), True)
 
 	def eval(self, expr: Expr) -> Any:
 		return self.eval_in_env(expr, self.global_env)
 
-	def load_library(self, library: Any) -> None:
-		public_methods = [(name, m) for name, m in inspect.getmembers(library, inspect.ismethod)
+	def load_library(self, lib_instance: Any, attach: bool) -> None:
+		public_methods = [(name, m) for name, m in inspect.getmembers(lib_instance, inspect.ismethod)
 			if not name.startswith('_')]
 
+		lib_name = type(lib_instance).__name__.lower().replace('lib', '')
+		if lib_name is None:
+			raise InterpreterError('failed to retrieve lib name')
+
 		funcs = {name: BuiltinFunction.from_func(func) for name, func in public_methods}
-		self.global_env.state.update(funcs)
+		lib_env = self.root_env.child_env(lib_name)
+		lib_env.state.update(funcs)
+
+		lib = Library(lib_env)
+		self.global_env.state[lib_name] = lib
+
+		if attach:
+			self.global_env.state.update(funcs)
 
 	def eval_in_env(self, expr: Expr, env: Environment) -> Any:
 		eval_func = getattr(self, f'eval_{type(expr).__name__}')
@@ -55,6 +68,11 @@ class Interpreter:
 			assert isinstance(expr.rhs, IdentExpr)
 			env.state[expr.rhs.value] = lhs
 			return lhs
+		elif expr.op == BinaryOp.ACCESS:
+			lhs = self.eval_in_env(expr.lhs, env)
+			assert isinstance(expr.rhs, IdentExpr)
+			assert isinstance(lhs, Library)
+			return self._find_in_env(lhs.environment, expr.rhs)
 		else:
 			lhs = self.eval_in_env(expr.lhs, env)
 			rhs = self.eval_in_env(expr.rhs, env)
@@ -62,11 +80,15 @@ class Interpreter:
 
 		raise InterpreterError(f'unsupported binary op: {expr.op}')
 
+	def _find_in_env(self, env: Environment, ident: IdentExpr) -> Any:
+		if ident.value not in env.state:
+			raise InterpreterError(f'not found: {ident.value}')
+
+		return env.state[ident.value]
+
 	def eval_UnaryOpExpr(self, expr: UnaryOpExpr, env: Environment) -> Any:
 		arg = self.eval_in_env(expr.arg, env)
 		return _eager_unop_lookup[expr.op](arg)
-
-		raise InterpreterError(f'unsupported unary op: {expr.op}')
 
 	def eval_BoolLiteral(self, expr: BoolLiteral, env: Environment) -> Any:
 		return expr.value
@@ -81,10 +103,7 @@ class Interpreter:
 		return expr.value
 
 	def eval_IdentExpr(self, expr: IdentExpr, env: Environment) -> Any:
-		if expr.value not in env.state:
-			raise InterpreterError(f'not found: {expr.value}')
-
-		return env.state[expr.value]
+		return self._find_in_env(env, expr)
 
 	def eval_NullLiteral(self, expr: NullLiteral, env: Environment) -> Any:
 		return Null()
