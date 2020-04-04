@@ -1,7 +1,6 @@
 from cmd import Cmd
 
-from qry.parser import Parser
-from qry.interpreter import Interpreter
+from qry import Parser, Interpreter
 
 parser = Parser()
 interpreter = Interpreter()

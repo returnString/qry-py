@@ -2,7 +2,7 @@ from typing import Dict, Any
 import operator
 from dataclasses import dataclass
 
-from qry.syntax import *
+from .syntax import *
 
 @dataclass
 class Null:

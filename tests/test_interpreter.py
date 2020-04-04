@@ -2,8 +2,7 @@ from typing import Any, List, Tuple, Dict
 
 import pytest
 
-from qry.parser import Parser
-from qry.interpreter import Interpreter, null
+from qry import Parser, Interpreter, Null
 
 expressions_with_results = [
 	('0', 0),
@@ -16,7 +15,7 @@ expressions_with_results = [
 	('false', False),
 	('!true', False),
 	('!false', True),
-	('null', null),
+	('null', Null()),
 	(
 	'''
 		x <- 1

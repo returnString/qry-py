@@ -2,7 +2,7 @@ from typing import Any, Callable, Type, List, cast
 
 from lark import Lark, Transformer, v_args
 
-from qry.syntax import *
+from .syntax import *
 
 @v_args(meta = True)
 class ASTBuilder(Transformer): # type: ignore
