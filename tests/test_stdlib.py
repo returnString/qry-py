@@ -33,6 +33,11 @@ data_exprs = [
 		|> data.aggregate(age, sum(age))
 		|> data.count_rows()
 	''', 2),
+	(table_bootstrap + '''
+	data.get_table(conn, "my_table")
+		|> data.cross_join(data.get_table(conn, "my_table"))
+		|> data.count_rows()
+	''', 9),
 ]
 
 test_data_lib = data_driven_test(data_exprs)

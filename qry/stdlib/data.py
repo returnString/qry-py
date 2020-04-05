@@ -1,6 +1,7 @@
 from typing import Optional, Iterable, Any, List, Dict
 from typing_extensions import Protocol
 from dataclasses import dataclass
+from enum import Enum
 
 import sqlite3
 
@@ -24,6 +25,27 @@ class QueryStep(Protocol):
 		...
 
 @dataclass
+class QueryPipeline:
+	conn: DBCursor
+	source_table: str
+	steps: List[QueryStep]
+
+	def chain(self, step: QueryStep) -> 'QueryPipeline':
+		steps = self.steps.copy()
+		steps.append(step)
+		return QueryPipeline(self.conn, self.source_table, steps)
+
+	def render(self) -> str:
+		query = f'select * from {self.source_table}'
+		for step in self.steps:
+			query = step.render(query)
+		return query
+
+	def execute(self) -> Any:
+		self.conn.execute(self.render())
+		return self.conn.fetchall()
+
+@dataclass
 class Filter:
 	exprs: List[str]
 
@@ -36,6 +58,18 @@ class Count:
 	def render(self, source: str) -> str:
 		return f'select count(*) from ({source})'
 
+class JoinType(Enum):
+	CROSS = "cross"
+	LEFT = "left"
+
+@dataclass
+class Join:
+	type: JoinType
+	rhs: QueryPipeline
+
+	def render(self, source: str) -> str:
+		return f'select * from ({source}) {self.type.value} join ({self.rhs.render()})'
+
 @dataclass
 class Aggregate:
 	grouping_keys: List[str]
@@ -45,25 +79,6 @@ class Aggregate:
 		grouping_expr = ', '.join(self.grouping_keys)
 		select_expr = ', '.join(self.grouping_keys + self.aggregations)
 		return f'select {select_expr} from ({source}) group by {grouping_expr}'
-
-@dataclass
-class QueryPipeline:
-	conn: DBCursor
-	source_table: str
-	steps: List[QueryStep]
-
-	def chain(self, step: QueryStep) -> 'QueryPipeline':
-		steps = self.steps.copy()
-		steps.append(step)
-		return QueryPipeline(self.conn, self.source_table, steps)
-
-	def execute(self) -> Any:
-		query = f'select * from {self.source_table}'
-		for step in self.steps:
-			query = step.render(query)
-
-		self.conn.execute(query)
-		return self.conn.fetchall()
 
 @export
 def connect_sqlite(connstring: str) -> DBConn:
@@ -96,3 +111,7 @@ def count_rows(query: QueryPipeline) -> Number:
 @export
 def aggregate(query: QueryPipeline, group_by: Syntax, computation: Syntax) -> QueryPipeline:
 	return query.chain(Aggregate([group_by.render()], [computation.render()]))
+
+@export
+def cross_join(query: QueryPipeline, rhs: QueryPipeline) -> QueryPipeline:
+	return query.chain(Join(JoinType.CROSS, rhs))
