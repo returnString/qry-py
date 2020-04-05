@@ -6,10 +6,14 @@ from ..syntax import Expr
 
 from .export import export
 
+@export
 @dataclass
 class AST:
 	root: Expr
 	env: Environment
+
+	def __str__(self) -> str:
+		return self.root.render()
 
 # marker type for deferring evaluation of function arguments
 @export
