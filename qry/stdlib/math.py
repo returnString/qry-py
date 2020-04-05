@@ -1,8 +1,8 @@
-from numbers import Number
+from .core import Number
 
 class MathLib:
-	def min(self, a: int, b: int) -> int:
+	def min(self, a: Number, b: Number) -> Number:
 		return min(a, b)
 
-	def max(self, a: int, b: int) -> int:
+	def max(self, a: Number, b: Number) -> Number:
 		return max(a, b)

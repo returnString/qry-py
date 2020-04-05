@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import sqlite3
 
+from .core import Number
 from .meta import MetaLib
 
 class DBCursor(Protocol):
@@ -70,8 +71,8 @@ class DataLib:
 	def collect(self, query: QueryPipeline) -> Any:
 		return query.execute()
 
-	def count_rows(self, query: QueryPipeline) -> int:
+	def count_rows(self, query: QueryPipeline) -> Number:
 		query = query.chain(Count())
 		data = query.execute()
 		assert isinstance(data[0][0], int)
-		return data[0][0]
+		return Number(data[0][0])
