@@ -42,6 +42,8 @@ class BinaryOp(Enum):
 	LASSIGN = '<-'
 	RASSIGN = '->'
 
+	PIPE = '|>'
+
 _binary_ops_without_spaces = {
 	BinaryOp.ACCESS,
 }

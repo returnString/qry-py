@@ -21,9 +21,9 @@ data_exprs = [
 	conn <- data.connect_sqlite(":memory:")
 	data.execute(conn, "create table my_table (name text, age integer)")
 	data.execute(conn, "insert into my_table(name, age) values ('ruan', 26), ('ruanlater', 27)")
-	query <- data.get_table(conn, "my_table")
-	query <- data.filter(query, age > 26)
-	data.count_rows(query)
+	data.get_table(conn, "my_table")
+		|> data.filter(age > 26)
+		|> data.count_rows()
 	''', 1),
 ]
 

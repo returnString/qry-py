@@ -14,7 +14,8 @@ literal: "null" -> null_literal
 ?negate_expr: (NEGATE_OP compare_expr) | compare_expr
 ?compare_expr: add_expr (COMPARE_OP add_expr)*
 ?add_expr: mul_expr (ADD_OP mul_expr)*
-?mul_expr: call_expr (MUL_OP call_expr)*
+?mul_expr: pipe_expr (MUL_OP pipe_expr)*
+?pipe_expr: call_expr (PIPE_OP call_expr)*
 ?call_expr: access_expr call_arglist? | call_arglist -> paren_expr
 ?access_expr: primary (ACCESS_OP primary)*
 ?primary: literal | IDENT -> ident_expr | func_expr
@@ -34,6 +35,7 @@ COMPARE_OP: "==" | "!=" | "<=" | ">=" | ">" | "<"
 ADD_OP: "-" | "+"
 MUL_OP: "/" | "*"
 ACCESS_OP: "."
+PIPE_OP.2: "|>"
 
 %import common.NUMBER
 %import common.ESCAPED_STRING -> STRING

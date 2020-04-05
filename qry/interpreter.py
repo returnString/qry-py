@@ -1,6 +1,7 @@
 from typing import Dict, Any, List
 from types import ModuleType, FunctionType
 import operator
+import copy
 
 from .syntax import *
 from .runtime import *
@@ -88,6 +89,11 @@ class Interpreter:
 			assert isinstance(expr.rhs, IdentExpr)
 			assert isinstance(lhs, Library)
 			return self._find_in_env(lhs.environment, expr.rhs)
+		elif expr.op == BinaryOp.PIPE:
+			assert isinstance(expr.rhs, CallExpr)
+			new_rhs = copy.copy(expr.rhs)
+			new_rhs.args.insert(0, expr.lhs)
+			return self.eval_in_env(new_rhs, env)
 		else:
 			lhs = self.eval_in_env(expr.lhs, env)
 			rhs = self.eval_in_env(expr.rhs, env)

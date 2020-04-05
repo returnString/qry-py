@@ -42,6 +42,7 @@ class ASTBuilder(Transformer): # type: ignore
 	access_expr = _binop()
 	lassign_expr = _binop(right_associative = True)
 	rassign_expr = _binop()
+	pipe_expr = _binop()
 
 	negate_expr = _unop()
 
