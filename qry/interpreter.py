@@ -92,7 +92,7 @@ class Interpreter:
 		elif expr.op == BinaryOp.PIPE:
 			assert isinstance(expr.rhs, CallExpr)
 			new_rhs = copy.copy(expr.rhs)
-			new_rhs.args.insert(0, expr.lhs)
+			new_rhs.positional_args.insert(0, expr.lhs)
 			return self.eval_in_env(new_rhs, env)
 		else:
 			lhs = self.eval_in_env(expr.lhs, env)
@@ -139,7 +139,7 @@ class Interpreter:
 
 		if isinstance(func, Function):
 			func_env = func.environment.child_env('exec')
-			for arg, provided_expr in zip(func.args, expr.args):
+			for arg, provided_expr in zip(func.args, expr.positional_args):
 				if arg.eval_immediate:
 					func_env.state[arg.name] = self.eval_in_env(provided_expr, env)
 				else:
@@ -155,7 +155,7 @@ class Interpreter:
 			if func.implicit_caller_env:
 				args.append(env)
 
-			for arg, provided_expr in zip(func.args, expr.args):
+			for arg, provided_expr in zip(func.args, expr.positional_args):
 				if arg.eval_immediate:
 					args.append(self.eval_in_env(provided_expr, env))
 				else:

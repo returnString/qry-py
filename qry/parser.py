@@ -68,10 +68,23 @@ class ASTBuilder(Transformer): # type: ignore
 		return FuncExpr(self._source_info(meta), children[0], children[1])
 
 	def call_expr(self, children: List[Any], meta: Any) -> Any:
-		return CallExpr(self._source_info(meta), children[0], children[1])
+		positional = []
+		named = {}
+
+		for child in children[1]:
+			if isinstance(child, Expr):
+				positional.append(child)
+			else:
+				name, expr = child
+				named[name] = expr
+
+		return CallExpr(self._source_info(meta), children[0], positional, named)
 
 	def paren_expr(self, children: List[Any], meta: Any) -> Any:
 		return children[0][0]
+
+	def named_provided_arg(self, children: List[Any], meta: Any) -> Any:
+		return (children[0].value, children[1])
 
 	call_arglist = _passthrough()
 	block_expr = _passthrough()

@@ -120,7 +120,11 @@ class FuncExpr(Expr):
 @dataclass
 class CallExpr(Expr):
 	func: Expr
-	args: List[Expr]
+	positional_args: List[Expr]
+	named_args: Dict[str, Expr]
 
 	def render(self) -> str:
-		return f'{self.func.render()}({", ".join([ a.render() for a in self.args ])})'
+		named = [f'{name} = {a.render()}' for name, a in self.named_args.items()]
+		positional = [a.render() for a in self.positional_args]
+		args = ', '.join(positional + named)
+		return f'{self.func.render()}({args})'
