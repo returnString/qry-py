@@ -1,6 +1,7 @@
 from typing import Any, Callable, Type, List, cast
 from pathlib import Path
 import sys
+from decimal import Decimal
 
 from lark import Lark, Transformer, v_args
 
@@ -44,8 +45,7 @@ class ASTBuilder(Transformer): # type: ignore
 
 	negate_expr = _unop()
 
-	int_literal = _literal(IntLiteral, int)
-	float_literal = _literal(FloatLiteral, float)
+	number_literal = _literal(NumberLiteral, Decimal)
 	string_literal = _literal(StringLiteral, lambda x: str(x)[1:-1])
 
 	def bool_literal_true(self, children: List[Any], meta: Any) -> BoolLiteral:

@@ -111,10 +111,7 @@ class Interpreter:
 	def eval_BoolLiteral(self, expr: BoolLiteral, env: Environment) -> Any:
 		return expr.value
 
-	def eval_IntLiteral(self, expr: IntLiteral, env: Environment) -> Any:
-		return expr.value
-
-	def eval_FloatLiteral(self, expr: FloatLiteral, env: Environment) -> Any:
+	def eval_NumberLiteral(self, expr: NumberLiteral, env: Environment) -> Any:
 		return expr.value
 
 	def eval_StringLiteral(self, expr: StringLiteral, env: Environment) -> Any:

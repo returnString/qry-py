@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
 from typing import List, Dict
+from decimal import Decimal
 
 @dataclass
 class SourceInfo:
@@ -79,15 +80,8 @@ class StringLiteral(Expr):
 		return f'"{self.value}"'
 
 @dataclass
-class IntLiteral(Expr):
-	value: int
-
-	def render(self) -> str:
-		return str(self.value)
-
-@dataclass
-class FloatLiteral(Expr):
-	value: float
+class NumberLiteral(Expr):
+	value: Decimal
 
 	def render(self) -> str:
 		return str(self.value)

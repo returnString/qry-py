@@ -20,12 +20,8 @@ def data_driven_test(data: List[Tuple[str, Any]]) -> Any:
 	def testwrapper(source: str, expected_result: Any) -> None:
 		results = eval(source)
 		if isinstance(expected_result, list):
-			result_types = [type(r) for r in results]
-			expected_types = [type(r) for r in expected_result]
-			assert result_types == expected_types
 			assert results == expected_result
 		else:
 			assert results[-1] == expected_result
-			assert type(results[-1]) == type(expected_result)
 
 	return testwrapper

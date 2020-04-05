@@ -82,7 +82,6 @@ def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
 	for k, expected_value in expected_state.items():
 		assert k in interpreter.global_env.state
 		value = interpreter.global_env.state[k]
-		assert type(value) == type(expected_value)
 		assert value == expected_value
 
 def test_builtin_eval() -> None:
