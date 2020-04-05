@@ -1,4 +1,4 @@
-from typing import Optional, Iterable, Any, List
+from typing import Optional, Iterable, Any, List, Dict
 from typing_extensions import Protocol
 from dataclasses import dataclass
 
@@ -34,7 +34,17 @@ class Filter:
 @dataclass
 class Count:
 	def render(self, source: str) -> str:
-		return f'select count(*) from ({source})s'
+		return f'select count(*) from ({source})'
+
+@dataclass
+class Aggregate:
+	grouping_keys: List[str]
+	aggregations: List[str]
+
+	def render(self, source: str) -> str:
+		grouping_expr = ', '.join(self.grouping_keys)
+		select_expr = ', '.join(self.grouping_keys + self.aggregations)
+		return f'select {select_expr} from ({source}) group by {grouping_expr}'
 
 @dataclass
 class QueryPipeline:
@@ -82,3 +92,7 @@ def count_rows(query: QueryPipeline) -> Number:
 	data = query.execute()
 	assert isinstance(data[0][0], int)
 	return Number(data[0][0])
+
+@export
+def aggregate(query: QueryPipeline, group_by: Syntax, computation: Syntax) -> QueryPipeline:
+	return query.chain(Aggregate([group_by.render()], [computation.render()]))
