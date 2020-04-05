@@ -12,7 +12,7 @@ class QryCmd(Cmd):
 		try:
 			for expr in parser.parse(line):
 				val = interpreter.eval(expr)
-				print(repr(val))
+				print(f'({type(val).__name__}) {val}')
 		except InterpreterError as err:
 			print(err)
 
