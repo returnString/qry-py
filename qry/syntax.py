@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict
 
 @dataclass
 class SourceInfo:
@@ -109,12 +109,13 @@ class NullLiteral(Expr):
 
 @dataclass
 class FuncExpr(Expr):
-	args: List[str]
+	args: Dict[str, Expr]
 	body: List[Expr]
 
 	def render(self) -> str:
-		body = "\n".join([e.render() for e in self.body])
-		return f'fn({", ".join(self.args)}) {{ {body} }}'
+		body = '\n'.join([e.render() for e in self.body])
+		args = ', '.join([f'{k}: {v}' for k, v in self.args.items()])
+		return f'fn({args}) {{ {body} }}'
 
 @dataclass
 class CallExpr(Expr):

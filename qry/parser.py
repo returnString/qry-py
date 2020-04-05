@@ -58,8 +58,8 @@ class ASTBuilder(Transformer): # type: ignore
 	def ident_expr(self, children: List[Any], meta: Any) -> IdentExpr:
 		return IdentExpr(self._source_info(meta), children[0].value)
 
-	def args_def(self, children: List[Any], meta: Any) -> List[str]:
-		return [t.value for t in children]
+	def args_def(self, children: List[Any], meta: Any) -> Dict[str, Expr]:
+		return {arg.children[0]: arg.children[1] for arg in children}
 
 	def func_expr(self, children: List[Any], meta: Any) -> FuncExpr:
 		return FuncExpr(self._source_info(meta), children[0], children[1])

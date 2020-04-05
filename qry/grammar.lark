@@ -20,7 +20,8 @@ literal: "null" -> null_literal
 ?access_expr: primary (ACCESS_OP primary)*
 ?primary: literal | IDENT -> ident_expr | func_expr
 
-args_def: IDENT? ("," IDENT)* ","?
+arg_def: IDENT ":" expr
+args_def: arg_def? ("," arg_def)* ","?
 call_arglist: "(" expr? ("," expr)* ","? ")"
 block_expr: "{" expr* "}"
 func_expr: "fn" "(" args_def ")" block_expr

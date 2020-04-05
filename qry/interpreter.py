@@ -41,19 +41,26 @@ class Interpreter:
 		public_methods = [(name, m) for name, m in inspect.getmembers(lib_instance, inspect.ismethod)
 			if not name.startswith('_')]
 
+		public_types = [(name, m) for name, m in inspect.getmembers(lib_instance, inspect.isclass)
+			if not name.startswith('_')]
+
 		lib_name = type(lib_instance).__name__.lower().replace('lib', '')
 		if lib_name is None:
 			raise InterpreterError('failed to retrieve lib name')
 
 		funcs = {name: BuiltinFunction.from_func(func) for name, func in public_methods}
+		types = {name: type for name, type in public_types}
+
+		lib_state = {**funcs, **types}
+
 		lib_env = self.root_env.child_env(lib_name)
-		lib_env.state.update(funcs)
+		lib_env.state.update(lib_state)
 
 		lib = Library(lib_env)
 		self.global_env.state[lib_name] = lib
 
 		if attach:
-			self.global_env.state.update(funcs)
+			self.global_env.state.update(lib_state)
 
 	def eval_in_env(self, expr: Expr, env: Environment) -> Any:
 		eval_func = getattr(self, f'eval_{type(expr).__name__}')
@@ -111,17 +118,18 @@ class Interpreter:
 		return Null()
 
 	def eval_FuncExpr(self, expr: FuncExpr, env: Environment) -> Any:
-		return Function(expr.args, expr.body, env.child_env('func_closure'))
+		args = [Argument(name, self.eval_in_env(type, env)) for name, type in expr.args.items()]
+		return Function(args, expr.body, env.child_env('func_closure'))
 
 	def eval_CallExpr(self, expr: CallExpr, env: Environment) -> Any:
 		func = self.eval_in_env(expr.func, env)
 
-		arg_values = [self.eval_in_env(e, env) for e in expr.args]
+		provided_values = [self.eval_in_env(e, env) for e in expr.args]
 
 		if isinstance(func, Function):
 			func_env = func.environment.child_env('exec')
-			for arg_name, arg_value in zip(func.args, arg_values):
-				func_env.state[arg_name] = arg_value
+			for arg, provided_value in zip(func.args, provided_values):
+				func_env.state[arg.name] = provided_value
 
 			ret = None
 			for e in func.body:
@@ -129,6 +137,6 @@ class Interpreter:
 
 			return ret
 		elif isinstance(func, BuiltinFunction):
-			return func.func(*arg_values)
+			return func.func(*provided_values)
 
-		raise InterpreterError('invalid function')
+		raise InterpreterError(f'invalid function: {func}')

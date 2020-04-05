@@ -19,11 +19,19 @@ class Null:
 		return 'null'
 
 @dataclass
-class FunctionBase:
-	args: List[str]
+class Argument:
+	name: str
+	type: Any
 
 	def __repr__(self) -> str:
-		return f'fn({", ".join(self.args)})'
+		return f'{self.name}: {self.type}'
+
+@dataclass
+class FunctionBase:
+	args: List[Argument]
+
+	def __repr__(self) -> str:
+		return f'fn({", ".join([ repr(a) for a in self.args ])})'
 
 @dataclass
 class Function(FunctionBase):
@@ -40,7 +48,8 @@ class BuiltinFunction(FunctionBase):
 	@classmethod
 	def from_func(cls, func: Callable[..., Any]) -> 'BuiltinFunction':
 		# skip self
-		args = inspect.getfullargspec(func).args[1:]
+		py_args = inspect.getfullargspec(func).args[1:]
+		args = [Argument(a, 'Any') for a in py_args]
 		return cls(args, func)
 
 @dataclass

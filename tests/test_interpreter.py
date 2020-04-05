@@ -49,7 +49,7 @@ expressions_with_final_state = [
 	'z': 1,
 	}),
 	('''
-	add <- fn(x, y) {
+	add <- fn(x: Int, y: Int) {
 		x + y
 	}
 
@@ -59,7 +59,7 @@ expressions_with_final_state = [
 	}),
 	('''
 	fixed_bonus <- 100
-	add_with_closure <- fn(x, y) {
+	add_with_closure <- fn(x: Int, y: Int) {
 		x + y + fixed_bonus
 	}
 
@@ -83,7 +83,11 @@ def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
 
 def test_builtin_eval() -> None:
 	interpreter = Interpreter()
-	interpreter.global_env.state['sum'] = BuiltinFunction(['x', 'y'], lambda x, y: x + y)
+
+	def sum_func(x: int, y: int) -> int:
+		return x + y
+
+	interpreter.global_env.state['sum'] = BuiltinFunction.from_func(sum_func)
 	assert eval_single('sum(1, 2)', interpreter) == 3
 
 def test_library_load() -> None:
