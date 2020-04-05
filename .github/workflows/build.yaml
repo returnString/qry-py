@@ -1,4 +1,4 @@
-name: Test
+name: Build
 
 on: [push]
 
@@ -28,3 +28,11 @@ jobs:
     - name: Test with pytest
       run: |
         pytest --cov=qry
+    - name: Build with pyinstaller
+      run: |
+        pyinstaller --noconfirm cli.spec
+    - name: Upload build
+      uses: actions/upload-artifact@v1
+      with:
+        name: qry
+        path: dist/
