@@ -8,6 +8,7 @@ from .environment import Environment
 from .stdlib.core import CoreLib
 from .stdlib.meta import MetaLib
 from .stdlib.math import MathLib
+from .stdlib.data import DataLib
 
 _eager_binop_lookup = {
 	BinaryOp.ADD: operator.add,
@@ -36,6 +37,7 @@ class Interpreter:
 		self.load_library(CoreLib(), True)
 		self.load_library(MetaLib(self.eval_in_env), False)
 		self.load_library(MathLib(), False)
+		self.load_library(DataLib(), False)
 
 	def eval(self, expr: Expr) -> Any:
 		return self.eval_in_env(expr, self.global_env)
