@@ -4,8 +4,9 @@ import inspect
 
 from .syntax import *
 from .runtime import *
+from .environment import Environment
 from .stdlib.core import CoreLib
-from .stdlib.meta import MetaLib, Syntax
+from .stdlib.meta import MetaLib
 from .stdlib.math import MathLib
 
 _eager_binop_lookup = {
@@ -33,7 +34,7 @@ class Interpreter:
 		self.root_env = Environment('root', dict())
 		self.global_env = self.root_env.child_env('global')
 		self.load_library(CoreLib(), True)
-		self.load_library(MetaLib(), False)
+		self.load_library(MetaLib(self.eval_in_env), False)
 		self.load_library(MathLib(), False)
 
 	def eval(self, expr: Expr) -> Any:
@@ -121,7 +122,7 @@ class Interpreter:
 
 	def _create_arg(self, name: str, arg_type_expr: Expr, env: Environment) -> Argument:
 		arg_type = self.eval_in_env(arg_type_expr, env)
-		return Argument(name, arg_type, arg_type is not Syntax)
+		return Argument(name, arg_type, arg_type is not MetaLib.Syntax)
 
 	def eval_FuncExpr(self, expr: FuncExpr, env: Environment) -> Any:
 		args = [self._create_arg(name, type, env) for name, type in expr.args.items()]
@@ -144,6 +145,16 @@ class Interpreter:
 
 			return ret
 		elif isinstance(func, BuiltinFunction):
-			return func.func(*[self.eval_in_env(e, env) for e in expr.args])
+			args: List[Any] = []
+			if func.implicit_caller_env:
+				args.append(env)
+
+			for arg, provided_expr in zip(func.args, expr.args):
+				if arg.eval_immediate:
+					args.append(self.eval_in_env(provided_expr, env))
+				else:
+					args.append(provided_expr)
+
+			return func.func(*args)
 
 		raise InterpreterError(f'invalid function: {func}')

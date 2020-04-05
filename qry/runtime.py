@@ -3,15 +3,9 @@ from dataclasses import dataclass, field
 import inspect
 
 from .syntax import Expr, FuncExpr
-
-@dataclass
-class Environment:
-	name: str
-	state: Dict[str, Any]
-
-	def child_env(self, name: str) -> 'Environment':
-		child_state = self.state.copy()
-		return Environment(name, child_state)
+from .environment import Environment
+from .stdlib.core import CoreLib
+from .stdlib.meta import MetaLib
 
 @dataclass
 class Null:
@@ -39,19 +33,45 @@ class Function(FunctionBase):
 	body: List[Expr]
 	environment: Environment
 
+_py_type_map = {
+	str: CoreLib.String,
+	int: CoreLib.Int,
+}
+
+def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
+	annotated_type = arg_spec.annotations[name]
+	containing_module = inspect.getmodule(annotated_type)
+
+	if containing_module is not None and containing_module.__name__.startswith('qry.stdlib.'):
+		arg_type = annotated_type
+	else:
+		arg_type = _py_type_map[annotated_type]
+
+	return Argument(name, arg_type, arg_type is not MetaLib.Syntax)
+
 @dataclass
 class BuiltinFunction(FunctionBase):
 	func: Callable[..., Any]
+	implicit_caller_env: bool
 
 	def __repr__(self) -> str:
 		return '[builtin] ' + super().__repr__()
 
 	@classmethod
 	def from_func(cls, func: Callable[..., Any]) -> 'BuiltinFunction':
-		# skip self
-		py_args = inspect.getfullargspec(func).args[1:]
-		args = [Argument(a, 'Any', True) for a in py_args]
-		return cls(args, func)
+		arg_spec = inspect.getfullargspec(func)
+		arg_names = arg_spec.args
+
+		# skip self if handling bound method
+		if arg_names and arg_names[0] == 'self':
+			arg_names = arg_names[1:]
+
+		implicit_caller_env = len(arg_names) > 0 and arg_names[0] == '_env'
+		if implicit_caller_env:
+			arg_names = arg_names[1:]
+
+		args = [_py_arg(arg_spec, a) for a in arg_names]
+		return cls(args, func, implicit_caller_env)
 
 @dataclass
 class Library:

@@ -6,3 +6,12 @@ math_exprs = [
 ]
 
 test_math_lib = data_driven_test(math_exprs)
+
+meta_exprs = [
+	('meta.eval_ast(meta.get_ast(1 + 1))', 2),
+	('''
+	x <- 1
+	meta.eval_ast(meta.get_ast(1 + 1 + x))''', [1, 3]),
+]
+
+test_meta_lib = data_driven_test(meta_exprs)
