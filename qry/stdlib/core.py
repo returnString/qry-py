@@ -1,11 +1,16 @@
+import builtins
 from decimal import Decimal
 
+from .export import export
+
+@export
 class Number(Decimal):
 	pass
 
+@export
 class String(str):
 	pass
 
-class CoreLib:
-	Number = Number
-	String = String
+@export
+def print(text: String) -> None:
+	builtins.print(text)

@@ -4,8 +4,7 @@ import inspect
 
 from .syntax import Expr, FuncExpr
 from .environment import Environment
-from .stdlib.core import CoreLib
-from .stdlib.meta import MetaLib
+from .stdlib import meta
 
 @dataclass
 class Null:
@@ -33,22 +32,9 @@ class Function(FunctionBase):
 	body: List[Expr]
 	environment: Environment
 
-_py_type_map = {
-	str: CoreLib.String,
-	int: CoreLib.Number,
-	float: CoreLib.Number,
-}
-
 def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 	annotated_type = arg_spec.annotations[name]
-	containing_module = inspect.getmodule(annotated_type)
-
-	if containing_module is not None and containing_module.__name__.startswith('qry.stdlib.'):
-		arg_type = annotated_type
-	else:
-		arg_type = _py_type_map[annotated_type]
-
-	return Argument(name, arg_type, arg_type is not MetaLib.Syntax)
+	return Argument(name, annotated_type, annotated_type is not meta.Syntax)
 
 @dataclass
 class BuiltinFunction(FunctionBase):

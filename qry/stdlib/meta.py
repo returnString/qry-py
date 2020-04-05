@@ -4,21 +4,28 @@ from dataclasses import dataclass
 from ..runtime import Environment
 from ..syntax import Expr
 
+from .export import export
+
 @dataclass
 class AST:
 	root: Expr
 	env: Environment
 
-class MetaLib:
-	def __init__(self, eval_in_env: Callable[[Expr, Environment], Any]) -> None:
-		self._eval_in_env = eval_in_env
+# marker type for deferring evaluation of function arguments
+@export
+class Syntax(Expr):
+	pass
 
-	# marker type for deferring evaluation of function arguments
-	class Syntax(Expr):
-		pass
+_eval_in_env: Callable[[Expr, Environment], Any]
 
-	def get_ast(self, _env: Environment, expr: Syntax) -> AST:
-		return AST(expr, _env)
+def init(eval_in_env: Callable[[Expr, Environment], Any]) -> None:
+	global _eval_in_env
+	_eval_in_env = eval_in_env
 
-	def eval_ast(self, ast: AST) -> Any:
-		return self._eval_in_env(ast.root, ast.env)
+@export
+def get_ast(_env: Environment, expr: Syntax) -> AST:
+	return AST(expr, _env)
+
+@export
+def eval_ast(ast: AST) -> Any:
+	return _eval_in_env(ast.root, ast.env)

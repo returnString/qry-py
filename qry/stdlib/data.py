@@ -5,7 +5,8 @@ from dataclasses import dataclass
 import sqlite3
 
 from .core import Number
-from .meta import MetaLib
+from .meta import Syntax
+from .export import export
 
 class DBCursor(Protocol):
 	def execute(self, sql: str, parameters: Iterable[Any] = ...) -> 'DBCursor':
@@ -54,25 +55,30 @@ class QueryPipeline:
 		self.conn.execute(query)
 		return self.conn.fetchall()
 
-class DataLib:
-	def connect_sqlite(self, connstring: str) -> DBConn:
-		return sqlite3.connect(connstring)
+@export
+def connect_sqlite(connstring: str) -> DBConn:
+	return sqlite3.connect(connstring)
 
-	def execute(self, conn: DBConn, sql: str) -> None:
-		cursor = conn.cursor()
-		cursor.execute(sql)
+@export
+def execute(conn: DBConn, sql: str) -> None:
+	cursor = conn.cursor()
+	cursor.execute(sql)
 
-	def get_table(self, conn: DBConn, table: str) -> QueryPipeline:
-		return QueryPipeline(conn.cursor(), table, [])
+@export
+def get_table(conn: DBConn, table: str) -> QueryPipeline:
+	return QueryPipeline(conn.cursor(), table, [])
 
-	def filter(self, query: QueryPipeline, expr: MetaLib.Syntax) -> QueryPipeline:
-		return query.chain(Filter([expr.render()]))
+@export
+def filter(query: QueryPipeline, expr: Syntax) -> QueryPipeline:
+	return query.chain(Filter([expr.render()]))
 
-	def collect(self, query: QueryPipeline) -> Any:
-		return query.execute()
+@export
+def collect(query: QueryPipeline) -> Any:
+	return query.execute()
 
-	def count_rows(self, query: QueryPipeline) -> Number:
-		query = query.chain(Count())
-		data = query.execute()
-		assert isinstance(data[0][0], int)
-		return Number(data[0][0])
+@export
+def count_rows(query: QueryPipeline) -> Number:
+	query = query.chain(Count())
+	data = query.execute()
+	assert isinstance(data[0][0], int)
+	return Number(data[0][0])
