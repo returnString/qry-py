@@ -1,4 +1,6 @@
 from typing import Any, Callable, Type, List, cast
+from pathlib import Path
+import sys
 
 from lark import Lark, Transformer, v_args
 
@@ -73,8 +75,16 @@ class ASTBuilder(Transformer): # type: ignore
 	call_arglist = _passthrough()
 	block_expr = _passthrough()
 
+def _get_data_file(file: str) -> Path:
+	try:
+		base_path = Path(sys._MEIPASS) # type: ignore
+	except AttributeError:
+		base_path = Path('.').absolute()
+
+	return base_path / Path(file)
+
 lark_parser = Lark.open(
-	'qry/grammar.lark',
+	_get_data_file('qry/grammar.lark'),
 	parser = 'lalr',
 	propagate_positions = True,
 	debug = True,
