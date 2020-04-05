@@ -34,5 +34,5 @@ jobs:
     - name: Upload build
       uses: actions/upload-artifact@v1
       with:
-        name: qry
+        name: ${{ matrix.os }}-py${{ matrix.python-version }}-qry
         path: dist/
