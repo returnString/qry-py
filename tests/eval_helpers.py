@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Optional
 
 import pytest
 
@@ -6,11 +6,12 @@ from qry import Parser, Interpreter
 
 parser = Parser()
 
-def eval(source: str, interpreter: Interpreter = Interpreter()) -> List[Any]:
+def eval(source: str, interpreter: Optional[Interpreter] = None) -> List[Any]:
+	interpreter = interpreter or Interpreter()
 	ast = parser.parse(source)
 	return [interpreter.eval(e) for e in ast]
 
-def eval_single(source: str, interpreter: Interpreter = Interpreter()) -> Any:
+def eval_single(source: str, interpreter: Optional[Interpreter] = None) -> Any:
 	results = eval(source, interpreter)
 	assert len(results) == 1
 	return results[0]
