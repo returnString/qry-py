@@ -12,5 +12,5 @@ class String(str):
 	pass
 
 @export
-def print(text: String) -> None:
-	builtins.print(text)
+def print(*text: String) -> None:
+	builtins.print(*text)

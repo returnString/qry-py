@@ -1,6 +1,7 @@
 from typing import List, Any, Dict, Callable
 from dataclasses import dataclass, field
 import inspect
+from enum import Enum, auto
 
 from .syntax import Expr, FuncExpr
 from .environment import Environment
@@ -11,11 +12,17 @@ class Null:
 	def __repr__(self) -> str:
 		return 'null'
 
+class ArgumentMode(Enum):
+	STANDARD = auto()
+	VARARGS = auto()
+	KWARGS = auto()
+
 @dataclass
 class Argument:
 	name: str
 	type: Any
 	eval_immediate: bool
+	mode: ArgumentMode
 
 	def __repr__(self) -> str:
 		return f'{self.name}: {self.type}'
@@ -34,7 +41,14 @@ class Function(FunctionBase):
 
 def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 	annotated_type = arg_spec.annotations[name]
-	return Argument(name, annotated_type, annotated_type is not meta.Syntax)
+	if arg_spec.varargs == name:
+		mode = ArgumentMode.VARARGS
+	elif arg_spec.varkw == name:
+		mode = ArgumentMode.KWARGS
+	else:
+		mode = ArgumentMode.STANDARD
+
+	return Argument(name, annotated_type, annotated_type is not meta.Syntax, mode)
 
 @dataclass
 class BuiltinFunction(FunctionBase):
@@ -48,10 +62,10 @@ class BuiltinFunction(FunctionBase):
 	def from_func(cls, func: Callable[..., Any]) -> 'BuiltinFunction':
 		arg_spec = inspect.getfullargspec(func)
 		arg_names = arg_spec.args
-
-		# skip self if handling bound method
-		if arg_names and arg_names[0] == 'self':
-			arg_names = arg_names[1:]
+		if arg_spec.varargs:
+			arg_names.append(arg_spec.varargs)
+		if arg_spec.varkw:
+			arg_names.append(arg_spec.varkw)
 
 		implicit_caller_env = len(arg_names) > 0 and arg_names[0] == '_env'
 		if implicit_caller_env:

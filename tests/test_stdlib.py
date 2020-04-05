@@ -30,7 +30,7 @@ data_exprs = [
 	''', 1),
 	(table_bootstrap + '''
 	data.get_table(conn, "my_table")
-		|> data.aggregate(age, sum(age))
+		|> data.aggregate(data.group(age), total_years = sum(age))
 		|> data.count_rows()
 	''', 2),
 	(table_bootstrap + '''

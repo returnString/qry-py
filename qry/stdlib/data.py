@@ -71,13 +71,22 @@ class Join:
 		return f'select * from ({source}) {self.type.value} join ({self.rhs.render()})'
 
 @dataclass
+class Grouping:
+	names: List[str]
+	computed: Dict[str, str]
+
+@dataclass
 class Aggregate:
-	grouping_keys: List[str]
-	aggregations: List[str]
+	by: Grouping
+	aggregations: Dict[str, str]
 
 	def render(self, source: str) -> str:
-		grouping_expr = ', '.join(self.grouping_keys)
-		select_expr = ', '.join(self.grouping_keys + self.aggregations)
+		grouping_expr = ', '.join(self.by.names + list(self.by.computed.keys()))
+
+		all_computations = {**self.by.computed, **self.aggregations}
+		select_computed = [f'{c} as {name}' for name, c in all_computations.items()]
+
+		select_expr = ', '.join(self.by.names + select_computed)
 		return f'select {select_expr} from ({source}) group by {grouping_expr}'
 
 @export
@@ -109,8 +118,12 @@ def count_rows(query: QueryPipeline) -> Number:
 	return Number(data[0][0])
 
 @export
-def aggregate(query: QueryPipeline, group_by: Syntax, computation: Syntax) -> QueryPipeline:
-	return query.chain(Aggregate([group_by.render()], [computation.render()]))
+def group(*by: Syntax, **named_by: Syntax) -> Grouping:
+	return Grouping([expr.render() for expr in by], {name: expr.render() for name, expr in named_by.items()})
+
+@export
+def aggregate(query: QueryPipeline, by: Grouping, **computation: Syntax) -> QueryPipeline:
+	return query.chain(Aggregate(by, {name: c.render() for name, c in computation.items()}))
 
 @export
 def cross_join(query: QueryPipeline, rhs: QueryPipeline) -> QueryPipeline:

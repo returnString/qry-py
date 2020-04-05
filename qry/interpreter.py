@@ -128,7 +128,7 @@ class Interpreter:
 
 	def _create_arg(self, name: str, arg_type_expr: Expr, env: Environment) -> Argument:
 		arg_type = self.eval_in_env(arg_type_expr, env)
-		return Argument(name, arg_type, arg_type is not meta.Syntax)
+		return Argument(name, arg_type, arg_type is not meta.Syntax, ArgumentMode.STANDARD)
 
 	def eval_FuncExpr(self, expr: FuncExpr, env: Environment) -> Any:
 		args = [self._create_arg(name, type, env) for name, type in expr.args.items()]
@@ -155,12 +155,33 @@ class Interpreter:
 			if func.implicit_caller_env:
 				args.append(env)
 
-			for arg, provided_expr in zip(func.args, expr.positional_args):
-				if arg.eval_immediate:
-					args.append(self.eval_in_env(provided_expr, env))
-				else:
-					args.append(provided_expr)
+			kwargs: Dict[str, Any] = {}
 
-			return func.func(*args)
+			for i, provided_expr in enumerate(expr.positional_args):
+				arg = func.args[i]
+				if arg.mode == ArgumentMode.VARARGS:
+					remaining_args = expr.positional_args[i:]
+
+					for vararg in remaining_args:
+						if arg.eval_immediate:
+							args.append(self.eval_in_env(vararg, env))
+						else:
+							args.append(vararg)
+					break
+				else:
+					if arg.eval_immediate:
+						args.append(self.eval_in_env(provided_expr, env))
+					else:
+						args.append(provided_expr)
+
+			if func.args:
+				last_arg = func.args[-1]
+				if last_arg.mode == ArgumentMode.KWARGS:
+					if last_arg.eval_immediate:
+						kwargs = {name: self.eval_in_env(e, env) for name, e in expr.named_args.items()}
+					else:
+						kwargs = expr.named_args
+
+			return func.func(*args, **kwargs)
 
 		raise InterpreterError(f'invalid function: {func}')
