@@ -37,6 +37,7 @@ class Interpreter:
 	def __init__(self) -> None:
 		self.root_env = Environment('root', dict())
 		self.global_env = self.root_env.child_env('global')
+		core.init(self.attach_library)
 		self.load_library(core, True)
 		meta.init(self.eval_in_env)
 		self.load_library(meta, False)
@@ -46,13 +47,17 @@ class Interpreter:
 	def eval(self, expr: Expr) -> Any:
 		return self.eval_in_env(expr, self.global_env)
 
-	def load_library(self, lib_instance: ModuleType, attach: bool) -> None:
+	def _get_lib_name(self, lib_instance: ModuleType) -> str:
 		lib_name = lib_instance.__name__.split('.')[-1]
 		if lib_name is None:
 			raise InterpreterError('failed to retrieve lib name')
+		return lib_name
+
+	def load_library(self, lib_module: ModuleType, attach_global: bool) -> None:
+		lib_name = self._get_lib_name(lib_module)
 
 		lib_state = {}
-		export_list = export.get_all_exported_objs(lib_instance)
+		export_list = export.get_all_exported_objs(lib_module)
 		for obj in export_list:
 			name = obj.__name__
 			if isinstance(obj, FunctionType):
@@ -66,8 +71,11 @@ class Interpreter:
 		lib = Library(lib_env)
 		self.global_env.state[lib_name] = lib
 
-		if attach:
-			self.global_env.state.update(lib_state)
+		if attach_global:
+			self.attach_library(self.global_env, lib)
+
+	def attach_library(self, env: Environment, lib: Library) -> None:
+		env.state.update(lib.environment.state)
 
 	def eval_in_env(self, expr: Expr, env: Environment) -> Any:
 		eval_func = getattr(self, f'eval_{type(expr).__name__}')

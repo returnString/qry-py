@@ -17,26 +17,28 @@ meta_exprs = [
 test_meta_lib = data_driven_test(meta_exprs)
 
 table_bootstrap = '''
-conn <- data.connect_sqlite(":memory:")
-data.execute(conn, "create table my_table (name text, age integer)")
-data.execute(conn, "insert into my_table(name, age) values ('ruan', 26), ('ruanlater', 27), ('thirdperson', 27)")
+attach(data)
+
+conn <- connect_sqlite(":memory:")
+execute(conn, "create table my_table (name text, age integer)")
+execute(conn, "insert into my_table(name, age) values ('ruan', 26), ('ruanlater', 27), ('thirdperson', 27)")
 '''
 
 data_exprs = [
 	(table_bootstrap + '''
-	data.get_table(conn, "my_table")
-		|> data.filter(age <= 26)
-		|> data.count_rows()
+	get_table(conn, "my_table")
+		|> filter(age <= 26)
+		|> count_rows()
 	''', 1),
 	(table_bootstrap + '''
-	data.get_table(conn, "my_table")
-		|> data.aggregate(data.group(age), total_years = sum(age))
-		|> data.count_rows()
+	get_table(conn, "my_table")
+		|> aggregate(group(age), total_years = sum(age))
+		|> count_rows()
 	''', 2),
 	(table_bootstrap + '''
-	data.get_table(conn, "my_table")
-		|> data.cross_join(data.get_table(conn, "my_table"))
-		|> data.count_rows()
+	get_table(conn, "my_table")
+		|> cross_join(get_table(conn, "my_table"))
+		|> count_rows()
 	''', 9),
 ]
 
