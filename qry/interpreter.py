@@ -17,6 +17,10 @@ _eager_binop_lookup = {
 	BinaryOp.MULTIPLY: operator.mul,
 	BinaryOp.EQUAL: operator.eq,
 	BinaryOp.NOT_EQUAL: operator.ne,
+	BinaryOp.GREATER_THAN: operator.gt,
+	BinaryOp.GREATER_THAN_OR_EQUAL: operator.ge,
+	BinaryOp.LESS_THAN: operator.lt,
+	BinaryOp.LESS_THAN_OR_EQUAL: operator.le,
 }
 
 _eager_unop_lookup = {

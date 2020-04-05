@@ -19,6 +19,10 @@ expressions_with_results = [
 	('!false', True),
 	('-1', -1),
 	('null', Null()),
+	('0 > 1', False),
+	('0 < 1', True),
+	('0 >= 1', False),
+	('0 <= 1', True),
 	(
 	'''
 		x <- 1
