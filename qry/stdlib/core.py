@@ -1,10 +1,11 @@
+from decimal import Decimal
 
 class CoreLib:
-	class Int:
+	class Number(Decimal):
 		pass
 
-	class String:
+	class String(str):
 		pass
 
-	def print(self, text: str) -> None:
+	def print(self, text: String) -> None:
 		print(text)

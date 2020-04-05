@@ -53,7 +53,7 @@ expressions_with_final_state = [
 	'z': 1,
 	}),
 	('''
-	add <- fn(x: Int, y: Int) {
+	add <- fn(x: Number, y: Number) {
 		x + y
 	}
 
@@ -63,7 +63,7 @@ expressions_with_final_state = [
 	}),
 	('''
 	fixed_bonus <- 100
-	add_with_closure <- fn(x: Int, y: Int) {
+	add_with_closure <- fn(x: Number, y: Number) {
 		x + y + fixed_bonus
 	}
 

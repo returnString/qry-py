@@ -35,7 +35,8 @@ class Function(FunctionBase):
 
 _py_type_map = {
 	str: CoreLib.String,
-	int: CoreLib.Int,
+	int: CoreLib.Number,
+	float: CoreLib.Number,
 }
 
 def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
