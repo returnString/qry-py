@@ -1,6 +1,12 @@
 from uuid import uuid4
+import os
+
+import pytest
 
 from .eval_helpers import data_driven_test
+
+if os.getenv('QRY_CI_NODOCKER'):
+	pytest.skip('skipping tests requiring docker', allow_module_level = True)
 
 connect = '''
 attach(data)
