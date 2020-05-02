@@ -26,8 +26,12 @@ class DBConn(Protocol):
 class Connection:
 	c: DBConn
 
+@dataclass
+class RenderState:
+	alias_counter: int = 0
+
 class QueryStep(Protocol):
-	def render(self, prev: str) -> str:
+	def render(self, prev: str, state: RenderState) -> str:
 		...
 
 @export
@@ -42,28 +46,34 @@ class QueryPipeline:
 		steps.append(step)
 		return QueryPipeline(self.conn, self.source_table, steps)
 
-	def render(self) -> str:
+	def render(self, state: RenderState) -> str:
 		query = f'select * from {self.source_table}'
 		for step in self.steps:
-			query = step.render(query)
+			query = step.render(query, state)
 		return query
 
 	def execute(self) -> Any:
-		self.conn.execute(self.render())
+		state = RenderState()
+		print(self.render(state))
+		self.conn.execute(self.render(state))
 		return self.conn.fetchall()
+
+def render_subquery(source: str, state: RenderState) -> str:
+	state.alias_counter += 1
+	return f'({source}) qry_alias_{state.alias_counter}'
 
 @dataclass
 class Filter:
 	exprs: List[str]
 
-	def render(self, source: str) -> str:
+	def render(self, source: str, state: RenderState) -> str:
 		cond = ' and '.join(self.exprs)
-		return f'select * from ({source}) where {cond}'
+		return f'select * from {render_subquery(source, state)} where {cond}'
 
 @dataclass
 class Count:
-	def render(self, source: str) -> str:
-		return f'select count(*) from ({source})'
+	def render(self, source: str, state: RenderState) -> str:
+		return f'select count(*) from {render_subquery(source, state)}'
 
 class JoinType(Enum):
 	CROSS = "cross"
@@ -74,8 +84,8 @@ class Join:
 	type: JoinType
 	rhs: QueryPipeline
 
-	def render(self, source: str) -> str:
-		return f'select * from ({source}) {self.type.value} join ({self.rhs.render()})'
+	def render(self, source: str, state: RenderState) -> str:
+		return f'select * from {render_subquery(source, state)} {self.type.value} join {render_subquery(self.rhs.render(state), state)}'
 
 @export
 @dataclass
@@ -88,14 +98,14 @@ class Aggregate:
 	by: Grouping
 	aggregations: Dict[str, str]
 
-	def render(self, source: str) -> str:
+	def render(self, source: str, state: RenderState) -> str:
 		grouping_expr = ', '.join(self.by.names + list(self.by.computed.keys()))
 
 		all_computations = {**self.by.computed, **self.aggregations}
 		select_computed = [f'{c} as {name}' for name, c in all_computations.items()]
 
 		select_expr = ', '.join(self.by.names + select_computed)
-		return f'select {select_expr} from ({source}) group by {grouping_expr}'
+		return f'select {select_expr} from {render_subquery(source, state)} group by {grouping_expr}'
 
 @export
 def connect_sqlite(connstring: str) -> Connection:
