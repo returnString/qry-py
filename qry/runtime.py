@@ -75,7 +75,7 @@ def from_py(obj: Any) -> Any:
 	elif isinstance(obj, str):
 		return String(obj)
 	elif obj is None:
-		return Null
+		return Null()
 
 	raise Exception(f'returning unsupported type ({type(obj)}) to qry: {obj}')
 
