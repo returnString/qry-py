@@ -1,4 +1,4 @@
-from typing import List, Any, Dict, Callable
+from typing import List, Any, Dict, Callable, Optional
 from dataclasses import dataclass, field
 import inspect
 from enum import Enum, auto
@@ -6,7 +6,6 @@ from decimal import Decimal
 
 from .syntax import Expr, FuncExpr
 from .environment import Environment
-from .stdlib import meta
 from .stdlib.core import String, Number, Bool, Null
 from .stdlib.export import is_exported
 
@@ -55,7 +54,7 @@ def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 	else:
 		mode = ArgumentMode.STANDARD
 
-	return Argument(name, annotated_type, annotated_type is not meta.Syntax, mode,
+	return Argument(name, annotated_type, annotated_type is not Expr, mode,
 		annotated_type in _builtin_arg_types_to_convert)
 
 def to_py(obj: Any) -> Any:
@@ -125,6 +124,9 @@ class Method:
 
 	def resolve(self, types: List[type]) -> BuiltinFunction:
 		return self.funcs[_method_sig(types)]
+
+	def try_resolve(self, types: List[type]) -> Optional[BuiltinFunction]:
+		return self.funcs.get(_method_sig(types))
 
 def method(ref_func: Callable[..., Any]) -> Method:
 	# TODO: stash reference arg

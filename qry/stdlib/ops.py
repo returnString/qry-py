@@ -97,3 +97,20 @@ negate_arithmetic(unop(Number, operator.neg))
 negate_logical(unop(Bool, operator.not_))
 equal(binop(Bool, operator.eq))
 not_equal(binop(Bool, operator.ne))
+
+@export
+@method
+def to_string(obj: Any) -> str:
+	pass
+
+@to_string
+def num_to_string(obj: Number) -> str:
+	return str(obj.val)
+
+@to_string
+def string_to_string(obj: String) -> str:
+	return obj.val
+
+@to_string
+def bool_to_string(obj: String) -> str:
+	return str(obj.val)

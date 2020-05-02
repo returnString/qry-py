@@ -27,11 +27,6 @@ class Bool:
 class Null:
 	pass
 
-@export
-@dataclass
-class Unknown:
-	val: Any
-
 _attach_hook: Callable[..., None]
 
 def init(attach_hook: Callable[..., None]) -> None:

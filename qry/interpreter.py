@@ -140,7 +140,7 @@ class Interpreter:
 
 	def _create_arg(self, name: str, arg_type_expr: Expr, env: Environment) -> Argument:
 		arg_type = self.eval_in_env(arg_type_expr, env)
-		return Argument(name, arg_type, arg_type is not meta.Syntax, ArgumentMode.STANDARD, False)
+		return Argument(name, arg_type, arg_type is not Expr, ArgumentMode.STANDARD, False)
 
 	def eval_FuncExpr(self, expr: FuncExpr, env: Environment) -> Any:
 		args = [self._create_arg(name, type, env) for name, type in expr.args.items()]

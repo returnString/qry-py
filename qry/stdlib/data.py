@@ -5,8 +5,9 @@ from enum import Enum
 
 import sqlite3
 
+from ..syntax import Expr
+
 from .core import Number
-from .meta import Syntax
 from .export import export
 
 class DBCursor(Protocol):
@@ -110,7 +111,7 @@ def get_table(conn: Connection, table: str) -> QueryPipeline:
 	return QueryPipeline(conn.c.cursor(), table, [])
 
 @export
-def filter(query: QueryPipeline, expr: Syntax) -> QueryPipeline:
+def filter(query: QueryPipeline, expr: Expr) -> QueryPipeline:
 	return query.chain(Filter([expr.render()]))
 
 @export
@@ -125,11 +126,11 @@ def count_rows(query: QueryPipeline) -> Number:
 	return Number(data[0][0])
 
 @export
-def group(*by: Syntax, **named_by: Syntax) -> Grouping:
+def group(*by: Expr, **named_by: Expr) -> Grouping:
 	return Grouping([expr.render() for expr in by], {name: expr.render() for name, expr in named_by.items()})
 
 @export
-def aggregate(query: QueryPipeline, by: Grouping, **computation: Syntax) -> QueryPipeline:
+def aggregate(query: QueryPipeline, by: Grouping, **computation: Expr) -> QueryPipeline:
 	return query.chain(Aggregate(by, {name: c.render() for name, c in computation.items()}))
 
 @export
