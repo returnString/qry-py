@@ -115,6 +115,7 @@ def _method_sig(types: List[type]) -> str:
 
 @dataclass
 class Method:
+	default_func: BuiltinFunction
 	funcs: Dict[str, BuiltinFunction] = field(default_factory = dict)
 
 	def __call__(self, impl_func: Callable[..., Any]) -> None:
@@ -122,14 +123,25 @@ class Method:
 		args = [a.type for a in func_obj.args]
 		self.funcs[_method_sig(args)] = func_obj
 
-	def resolve(self, types: List[type]) -> BuiltinFunction:
-		return self.funcs[_method_sig(types)]
+	def _resolve(self, types: List[type]) -> BuiltinFunction:
+		return self.funcs.get(_method_sig(types), self.default_func)
 
-	def try_resolve(self, types: List[type]) -> Optional[BuiltinFunction]:
-		return self.funcs.get(_method_sig(types))
+	_no_default = object()
+
+	def call(self, *args: Any, default: Any = _no_default) -> Any:
+		func = self._resolve([type(a) for a in args])
+		if func.func == _unimplemented and default != self._no_default:
+			return default
+
+		return func.func(*args)
+
+_empty_func = lambda: None
+
+def _unimplemented(*args: Any, **kwargs: Any) -> None:
+	raise Exception(f'not implemented')
 
 def method(ref_func: Callable[..., Any]) -> Method:
-	# TODO: stash reference arg
-	meth = Method()
+	ref_func = ref_func if ref_func.__code__.co_code != _empty_func.__code__.co_code else _unimplemented
+	meth = Method(BuiltinFunction.from_func(ref_func))
 	setattr(meth, '__name__', ref_func.__name__)
 	return meth

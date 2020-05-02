@@ -34,9 +34,5 @@ def init(attach_hook: Callable[..., None]) -> None:
 	_attach_hook = attach_hook
 
 @export
-def print(*text: String) -> None:
-	builtins.print(*text)
-
-@export
 def attach(_env: Environment, library: Any) -> None:
 	_attach_hook(_env, library)

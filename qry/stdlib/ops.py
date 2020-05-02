@@ -1,6 +1,7 @@
 from typing import Any, Callable
 import operator
 from decimal import Decimal
+import builtins
 
 from .core import String, Number, Bool
 from .export import export
@@ -102,6 +103,11 @@ not_equal(binop(Bool, operator.ne))
 @method
 def to_string(obj: Any) -> str:
 	pass
+
+@export
+@method
+def print(obj: Any) -> None:
+	builtins.print(to_string.call(obj, default = ''))
 
 @to_string
 def num_to_string(obj: Number) -> str:
