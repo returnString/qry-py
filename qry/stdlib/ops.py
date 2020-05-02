@@ -73,13 +73,13 @@ def string_concat(a: String, b: String) -> String:
 
 def binop(target: type, op: Callable[[Any, Any], Any]) -> Any:
 	def impl(a: target, b: target) -> Any: # type: ignore
-		return op(a.val, b.val) # type: ignore
+		return from_py(op(a.val, b.val)) # type: ignore
 
 	return impl
 
 def unop(target: type, op: Callable[[Any], Any]) -> Any:
 	def impl(a: target) -> Any: # type: ignore
-		return op(a.val) # type: ignore
+		return from_py(op(a.val)) # type: ignore
 
 	return impl
 

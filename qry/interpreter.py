@@ -106,7 +106,7 @@ class Interpreter:
 			lhs = self.eval_in_env(expr.lhs, env)
 			rhs = self.eval_in_env(expr.rhs, env)
 			method = _eager_binop_lookup[expr.op]
-			return from_py(method.call(lhs, rhs))
+			return method.call(lhs, rhs)
 
 		raise InterpreterError(f'unsupported binary op: {expr.op}')
 
@@ -119,7 +119,7 @@ class Interpreter:
 	def eval_UnaryOpExpr(self, expr: UnaryOpExpr, env: Environment) -> Any:
 		arg = self.eval_in_env(expr.arg, env)
 		method = _eager_unop_lookup[expr.op]
-		return from_py(method.call(arg))
+		return method.call(arg)
 
 	def eval_BoolLiteral(self, expr: BoolLiteral, env: Environment) -> Any:
 		return expr.value
