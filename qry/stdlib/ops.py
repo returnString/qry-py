@@ -108,7 +108,7 @@ def string_to_string(obj: String) -> str:
 
 @to_string
 def bool_to_string(obj: Bool) -> str:
-	return str(obj.val)
+	return str(obj.val).lower()
 
 def func_str(obj: FunctionBase) -> str:
 	args = [f'{a.name}: {a.type}' for a in obj.args]

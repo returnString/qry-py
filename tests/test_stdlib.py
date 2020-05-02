@@ -43,3 +43,11 @@ data_exprs = [
 ]
 
 test_data_lib = data_driven_test(data_exprs)
+
+op_exprs = [
+	('to_string(true)', 'true'),
+	('to_string(1 + 1)', '2'),
+	('to_string("some string")', 'some string'),
+]
+
+test_op_lib = data_driven_test(op_exprs)
