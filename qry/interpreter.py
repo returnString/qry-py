@@ -147,6 +147,12 @@ class Interpreter:
 	def eval_CallExpr(self, expr: CallExpr, env: Environment) -> Any:
 		func = self.eval_in_env(expr.func, env)
 
+		method = None
+		if isinstance(func, Method):
+			method = func
+			# TODO: treat methods properly with declared args
+			func = method.default_func
+
 		if isinstance(func, Function):
 			func_env = func.environment.child_env('exec')
 			for arg, provided_expr in zip(func.args, expr.positional_args):
@@ -199,6 +205,7 @@ class Interpreter:
 					else:
 						kwargs = expr.named_args
 
-			return from_py(func.func(*args, **kwargs))
+			py_func = method.call if method else func.func
+			return from_py(py_func(*args, **kwargs))
 
 		raise InterpreterError(f'invalid function: {func}')

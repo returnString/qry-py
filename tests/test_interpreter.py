@@ -36,6 +36,7 @@ expressions_with_results = [
 	[1, 2, 3, True, False, False],
 	),
 	('"ohai" + ", " + "world"', "ohai, world"),
+	('print("hi there")', None),
 ]
 
 expressions_with_final_state = [
