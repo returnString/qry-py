@@ -5,64 +5,53 @@ import builtins
 
 from .core import String, Number, Bool
 from .export import export
-from ..runtime import method, from_py
+from ..environment import Environment
+from ..runtime import method, from_py, FunctionBase, Function, BuiltinFunction, Method, Library
 
-@export
 @method
 def add(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def subtract(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def divide(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def multiply(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def equal(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def not_equal(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def greater_than(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def greater_than_or_equal(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def less_than(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def less_than_or_equal(a: Any, b: Any) -> Any:
 	pass
 
-@export
 @method
 def negate_logical(a: Any) -> Any:
 	pass
 
-@export
 @method
 def negate_arithmetic(a: Any) -> Any:
 	pass
@@ -120,3 +109,27 @@ def string_to_string(obj: String) -> str:
 @to_string
 def bool_to_string(obj: String) -> str:
 	return str(obj.val)
+
+def func_str(obj: FunctionBase) -> str:
+	args = [f'{a.name}: {a.type}' for a in obj.args]
+	return f'fn({", ".join(args)})'
+
+@to_string
+def func_to_string(obj: Function) -> str:
+	return func_str(obj)
+
+@to_string
+def builtin_to_string(obj: BuiltinFunction) -> str:
+	return func_str(obj)
+
+@to_string
+def method_to_string(obj: Method) -> str:
+	return 'fn(...)'
+
+def environment_to_string(obj: Environment) -> str:
+	parent = obj.parent.name if obj.parent else 'none'
+	return f'{obj.name} (parent: {parent}, entries: {len(obj.state)})'
+
+@to_string
+def library_to_string(obj: Library) -> str:
+	return environment_to_string(obj.environment)

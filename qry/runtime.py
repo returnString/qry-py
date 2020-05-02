@@ -22,15 +22,9 @@ class Argument:
 	mode: ArgumentMode
 	convert_to_py: bool
 
-	def __repr__(self) -> str:
-		return f'{self.name}: {self.type}'
-
 @dataclass
 class FunctionBase:
 	args: List[Argument]
-
-	def __repr__(self) -> str:
-		return f'fn({", ".join([ repr(a) for a in self.args ])})'
 
 @dataclass
 class Function(FunctionBase):
@@ -84,9 +78,6 @@ class BuiltinFunction(FunctionBase):
 	func: Callable[..., Any]
 	implicit_caller_env: bool
 
-	def __repr__(self) -> str:
-		return '[builtin] ' + super().__repr__()
-
 	@classmethod
 	def from_func(cls, func: Callable[..., Any]) -> 'BuiltinFunction':
 		arg_spec = inspect.getfullargspec(func)
@@ -107,9 +98,6 @@ class BuiltinFunction(FunctionBase):
 class Library:
 	environment: Environment
 
-	def __repr__(self) -> str:
-		return f'library "{self.environment.name}" (object count: {len(self.environment.state)})'
-
 def _method_sig(types: List[type]) -> str:
 	return '|'.join([t.__name__ for t in types])
 
@@ -118,10 +106,11 @@ class Method:
 	default_func: BuiltinFunction
 	funcs: Dict[str, BuiltinFunction] = field(default_factory = dict)
 
-	def __call__(self, impl_func: Callable[..., Any]) -> None:
+	def __call__(self, impl_func: Callable[..., Any]) -> Callable[..., Any]:
 		func_obj = BuiltinFunction.from_func(impl_func)
 		args = [a.type for a in func_obj.args]
 		self.funcs[_method_sig(args)] = func_obj
+		return impl_func
 
 	def _resolve(self, types: List[type]) -> BuiltinFunction:
 		return self.funcs.get(_method_sig(types), self.default_func)
