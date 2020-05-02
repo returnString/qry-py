@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
 from typing import List, Dict
-from decimal import Decimal
+
+from .stdlib.core import Number
 
 @dataclass
 class SourceInfo:
@@ -83,7 +84,7 @@ class StringLiteral(Expr):
 
 @dataclass
 class NumberLiteral(Expr):
-	value: Decimal
+	value: Number
 
 	def render(self) -> str:
 		return str(self.value)
