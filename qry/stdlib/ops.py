@@ -107,7 +107,7 @@ def string_to_string(obj: String) -> str:
 	return obj.val
 
 @to_string
-def bool_to_string(obj: String) -> str:
+def bool_to_string(obj: Bool) -> str:
 	return str(obj.val)
 
 def func_str(obj: FunctionBase) -> str:
