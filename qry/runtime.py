@@ -141,7 +141,7 @@ def _unimplemented(*args: Any, **kwargs: Any) -> None:
 	raise Exception(f'not implemented')
 
 def method(ref_func: Callable[..., Any]) -> Method:
-	ref_func = ref_func if ref_func.__code__.co_code != _empty_func.__code__.co_code else _unimplemented
-	meth = Method(BuiltinFunction.from_func(ref_func))
+	default_func = ref_func if ref_func.__code__.co_code != _empty_func.__code__.co_code else _unimplemented
+	meth = Method(BuiltinFunction.from_func(default_func))
 	setattr(meth, '__name__', ref_func.__name__)
 	return meth
