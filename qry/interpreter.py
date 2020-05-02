@@ -134,7 +134,7 @@ class Interpreter:
 		return self._find_in_env(env, expr)
 
 	def eval_NullLiteral(self, expr: NullLiteral, env: Environment) -> Any:
-		return Null()
+		return core.Null()
 
 	def _create_arg(self, name: str, arg_type_expr: Expr, env: Environment) -> Argument:
 		arg_type = self.eval_in_env(arg_type_expr, env)

@@ -1,7 +1,7 @@
 from typing import Any, Callable
 from dataclasses import dataclass
 
-from ..runtime import Environment
+from ..environment import Environment
 from ..syntax import Expr
 
 from .export import export

@@ -2,7 +2,8 @@ from typing import Any, List, Tuple, Optional
 
 import pytest
 
-from qry import Parser, Interpreter
+from qry.parser import Parser
+from qry.interpreter import Interpreter
 from qry.runtime import to_py
 
 parser = Parser()

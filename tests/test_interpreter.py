@@ -2,7 +2,7 @@ from typing import Any, List, Tuple, Dict
 
 import pytest
 
-from qry import Parser, Interpreter
+from qry.interpreter import Interpreter
 from qry.runtime import BuiltinFunction
 from .eval_helpers import eval, eval_single, data_driven_test
 from . import examplelib

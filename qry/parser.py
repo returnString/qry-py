@@ -1,4 +1,4 @@
-from typing import Any, Callable, Type, List, cast
+from typing import Any, Callable, Type, List, Dict, cast
 from pathlib import Path
 import sys
 

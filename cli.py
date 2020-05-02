@@ -1,7 +1,8 @@
 from cmd import Cmd
 import builtins
 
-from qry import Parser, Interpreter, InterpreterError
+from qry.parser import Parser
+from qry.interpreter import Interpreter, InterpreterError
 from qry.stdlib.ops import print
 
 parser = Parser()
