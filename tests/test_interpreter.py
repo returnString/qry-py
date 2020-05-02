@@ -3,7 +3,7 @@ from typing import Any, List, Tuple, Dict
 import pytest
 
 from qry import Parser, Interpreter
-from qry.runtime import BuiltinFunction, Null
+from qry.runtime import BuiltinFunction
 from .eval_helpers import eval, eval_single, data_driven_test
 from . import examplelib
 
@@ -19,7 +19,7 @@ expressions_with_results = [
 	('!true', False),
 	('!false', True),
 	('-1', -1),
-	('null', Null()),
+	('null', None),
 	('0 > 1', False),
 	('0 < 1', True),
 	('0 >= 1', False),
@@ -81,8 +81,7 @@ def test_expression_state(source: str, expected_state: Dict[str, Any]) -> None:
 	interpreter = Interpreter()
 	eval(source, interpreter)
 	for k, expected_value in expected_state.items():
-		assert k in interpreter.global_env.state
-		value = interpreter.global_env.state[k]
+		value = eval_single(k, interpreter)
 		assert value == expected_value
 
 def test_builtin_eval() -> None:

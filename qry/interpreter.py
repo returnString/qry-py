@@ -1,30 +1,29 @@
 from typing import Dict, Any, List
 from types import ModuleType, FunctionType
-import operator
 import copy
 
 from .syntax import *
 from .runtime import *
 from .environment import Environment
 
-from .stdlib import export, core, meta, math, data
+from .stdlib import export, core, ops, meta, math, data
 
 _eager_binop_lookup = {
-	BinaryOp.ADD: operator.add,
-	BinaryOp.SUBTRACT: operator.sub,
-	BinaryOp.DIVIDE: operator.truediv,
-	BinaryOp.MULTIPLY: operator.mul,
-	BinaryOp.EQUAL: operator.eq,
-	BinaryOp.NOT_EQUAL: operator.ne,
-	BinaryOp.GREATER_THAN: operator.gt,
-	BinaryOp.GREATER_THAN_OR_EQUAL: operator.ge,
-	BinaryOp.LESS_THAN: operator.lt,
-	BinaryOp.LESS_THAN_OR_EQUAL: operator.le,
+	BinaryOp.ADD: ops.add,
+	BinaryOp.SUBTRACT: ops.subtract,
+	BinaryOp.DIVIDE: ops.divide,
+	BinaryOp.MULTIPLY: ops.multiply,
+	BinaryOp.EQUAL: ops.equal,
+	BinaryOp.NOT_EQUAL: ops.not_equal,
+	BinaryOp.GREATER_THAN: ops.greater_than,
+	BinaryOp.GREATER_THAN_OR_EQUAL: ops.greater_than_or_equal,
+	BinaryOp.LESS_THAN: ops.less_than,
+	BinaryOp.LESS_THAN_OR_EQUAL: ops.less_than_or_equal,
 }
 
 _eager_unop_lookup = {
-	UnaryOp.NEGATE_LOGICAL: operator.not_,
-	UnaryOp.NEGATE_ARITH: operator.neg,
+	UnaryOp.NEGATE_LOGICAL: ops.negate_logical,
+	UnaryOp.NEGATE_ARITH: ops.negate_arithmetic,
 }
 
 class InterpreterError(Exception):
@@ -39,6 +38,7 @@ class Interpreter:
 		self.global_env = self.root_env.child_env('global')
 		core.init(self.attach_library)
 		self.load_library(core, True)
+		self.load_library(ops, True)
 		meta.init(self.eval_in_env)
 		self.load_library(meta, False)
 		self.load_library(math, False)
@@ -105,7 +105,9 @@ class Interpreter:
 		else:
 			lhs = self.eval_in_env(expr.lhs, env)
 			rhs = self.eval_in_env(expr.rhs, env)
-			return _eager_binop_lookup[expr.op](lhs, rhs)
+			method = _eager_binop_lookup[expr.op]
+			func = method.resolve([type(lhs), type(rhs)])
+			return from_py(func.func(lhs, rhs))
 
 		raise InterpreterError(f'unsupported binary op: {expr.op}')
 
@@ -117,7 +119,9 @@ class Interpreter:
 
 	def eval_UnaryOpExpr(self, expr: UnaryOpExpr, env: Environment) -> Any:
 		arg = self.eval_in_env(expr.arg, env)
-		return _eager_unop_lookup[expr.op](arg)
+		method = _eager_unop_lookup[expr.op]
+		func = method.resolve([type(arg)])
+		return from_py(func.func(arg))
 
 	def eval_BoolLiteral(self, expr: BoolLiteral, env: Environment) -> Any:
 		return expr.value
@@ -136,7 +140,7 @@ class Interpreter:
 
 	def _create_arg(self, name: str, arg_type_expr: Expr, env: Environment) -> Argument:
 		arg_type = self.eval_in_env(arg_type_expr, env)
-		return Argument(name, arg_type, arg_type is not meta.Syntax, ArgumentMode.STANDARD)
+		return Argument(name, arg_type, arg_type is not meta.Syntax, ArgumentMode.STANDARD, False)
 
 	def eval_FuncExpr(self, expr: FuncExpr, env: Environment) -> Any:
 		args = [self._create_arg(name, type, env) for name, type in expr.args.items()]
@@ -165,6 +169,12 @@ class Interpreter:
 
 			kwargs: Dict[str, Any] = {}
 
+			def arg_eval_wrapper(arg: Argument, target: Expr) -> Any:
+				ret = self.eval_in_env(target, env)
+				if arg.convert_to_py:
+					ret = to_py(ret)
+				return ret
+
 			for i, provided_expr in enumerate(expr.positional_args):
 				arg = func.args[i]
 				if arg.mode == ArgumentMode.VARARGS:
@@ -172,13 +182,13 @@ class Interpreter:
 
 					for vararg in remaining_args:
 						if arg.eval_immediate:
-							args.append(self.eval_in_env(vararg, env))
+							args.append(arg_eval_wrapper(arg, vararg))
 						else:
 							args.append(vararg)
 					break
 				else:
 					if arg.eval_immediate:
-						args.append(self.eval_in_env(provided_expr, env))
+						args.append(arg_eval_wrapper(arg, provided_expr))
 					else:
 						args.append(provided_expr)
 
@@ -186,10 +196,11 @@ class Interpreter:
 				last_arg = func.args[-1]
 				if last_arg.mode == ArgumentMode.KWARGS:
 					if last_arg.eval_immediate:
+						# TODO: make kwargs play nicely with to_py
 						kwargs = {name: self.eval_in_env(e, env) for name, e in expr.named_args.items()}
 					else:
 						kwargs = expr.named_args
 
-			return func.func(*args, **kwargs)
+			return from_py(func.func(*args, **kwargs))
 
 		raise InterpreterError(f'invalid function: {func}')

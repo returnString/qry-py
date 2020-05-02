@@ -5,7 +5,7 @@ import sys
 from lark import Lark, Transformer, v_args
 
 from .syntax import *
-from .stdlib.core import String, Number
+from .stdlib.core import String, Number, Bool
 
 def _passthrough() -> Any:
 	return lambda self, children, meta: children
@@ -50,10 +50,10 @@ class ASTBuilder(Transformer): # type: ignore
 	string_literal = _literal(StringLiteral, lambda x: String(str(x)[1:-1]))
 
 	def bool_literal_true(self, children: List[Any], meta: Any) -> BoolLiteral:
-		return BoolLiteral(self._source_info(meta), True)
+		return BoolLiteral(self._source_info(meta), Bool(True))
 
 	def bool_literal_false(self, children: List[Any], meta: Any) -> BoolLiteral:
-		return BoolLiteral(self._source_info(meta), False)
+		return BoolLiteral(self._source_info(meta), Bool(False))
 
 	def null_literal(self, children: List[Any], meta: Any) -> NullLiteral:
 		return NullLiteral(self._source_info(meta))

@@ -3,7 +3,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 from typing import List, Dict
 
-from .stdlib.core import Number
+from .stdlib.core import Number, String, Bool, Null
 
 @dataclass
 class SourceInfo:
@@ -77,24 +77,24 @@ class UnaryOpExpr(Expr):
 
 @dataclass
 class StringLiteral(Expr):
-	value: str
+	value: String
 
 	def render(self) -> str:
-		return f'"{self.value}"'
+		return f'"{self.value.val}"'
 
 @dataclass
 class NumberLiteral(Expr):
 	value: Number
 
 	def render(self) -> str:
-		return str(self.value)
+		return str(self.value.val)
 
 @dataclass
 class BoolLiteral(Expr):
-	value: bool
+	value: Bool
 
 	def render(self) -> str:
-		return str(self.value)
+		return str(self.value.val)
 
 @dataclass
 class IdentExpr(Expr):

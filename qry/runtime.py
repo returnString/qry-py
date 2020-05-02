@@ -2,15 +2,13 @@ from typing import List, Any, Dict, Callable
 from dataclasses import dataclass, field
 import inspect
 from enum import Enum, auto
+from decimal import Decimal
 
 from .syntax import Expr, FuncExpr
 from .environment import Environment
 from .stdlib import meta
-
-@dataclass
-class Null:
-	def __repr__(self) -> str:
-		return 'null'
+from .stdlib.core import String, Number, Bool, Null
+from .stdlib.export import is_exported
 
 class ArgumentMode(Enum):
 	STANDARD = auto()
@@ -23,6 +21,7 @@ class Argument:
 	type: Any
 	eval_immediate: bool
 	mode: ArgumentMode
+	convert_to_py: bool
 
 	def __repr__(self) -> str:
 		return f'{self.name}: {self.type}'
@@ -39,6 +38,14 @@ class Function(FunctionBase):
 	body: List[Expr]
 	environment: Environment
 
+_builtin_arg_types_to_convert = {
+	str,
+	bool,
+	int,
+	float,
+	Decimal,
+}
+
 def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 	annotated_type = arg_spec.annotations[name]
 	if arg_spec.varargs == name:
@@ -48,7 +55,30 @@ def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 	else:
 		mode = ArgumentMode.STANDARD
 
-	return Argument(name, annotated_type, annotated_type is not meta.Syntax, mode)
+	return Argument(name, annotated_type, annotated_type is not meta.Syntax, mode,
+		annotated_type in _builtin_arg_types_to_convert)
+
+def to_py(obj: Any) -> Any:
+	if isinstance(obj, (String, Number, Bool)):
+		return obj.val
+	elif isinstance(obj, Null):
+		return None
+
+	return obj
+
+def from_py(obj: Any) -> Any:
+	if is_exported(type(obj)):
+		return obj
+	elif isinstance(obj, bool):
+		return Bool(obj)
+	if isinstance(obj, (int, float, Decimal)):
+		return Number(obj)
+	elif isinstance(obj, str):
+		return String(obj)
+	elif obj is None:
+		return Null
+
+	raise Exception(f'returning unsupported type ({type(obj)}) to qry: {obj}')
 
 @dataclass
 class BuiltinFunction(FunctionBase):
@@ -80,3 +110,24 @@ class Library:
 
 	def __repr__(self) -> str:
 		return f'library "{self.environment.name}" (object count: {len(self.environment.state)})'
+
+def _method_sig(types: List[type]) -> str:
+	return '|'.join([t.__name__ for t in types])
+
+@dataclass
+class Method:
+	funcs: Dict[str, BuiltinFunction] = field(default_factory = dict)
+
+	def __call__(self, impl_func: Callable[..., Any]) -> None:
+		func_obj = BuiltinFunction.from_func(impl_func)
+		args = [a.type for a in func_obj.args]
+		self.funcs[_method_sig(args)] = func_obj
+
+	def resolve(self, types: List[type]) -> BuiltinFunction:
+		return self.funcs[_method_sig(types)]
+
+def method(ref_func: Callable[..., Any]) -> Method:
+	# TODO: stash reference arg
+	meth = Method()
+	setattr(meth, '__name__', ref_func.__name__)
+	return meth

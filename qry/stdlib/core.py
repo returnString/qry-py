@@ -1,17 +1,36 @@
 import builtins
 from decimal import Decimal
-from typing import Callable, Any
+from typing import Callable, Any, Union
+from dataclasses import dataclass
 
 from ..environment import Environment
 from .export import export
 
 @export
-class Number(Decimal):
+class Number:
+	val: Decimal
+
+	def __init__(self, val: Union[Decimal, int, float]) -> None:
+		self.val = Decimal(val)
+
+@export
+@dataclass
+class String:
+	val: str
+
+@export
+@dataclass
+class Bool:
+	val: bool
+
+@export
+class Null:
 	pass
 
 @export
-class String(str):
-	pass
+@dataclass
+class Unknown:
+	val: Any
 
 _attach_hook: Callable[..., None]
 

@@ -1,12 +1,13 @@
 import builtins
+from decimal import Decimal
 
-from .core import Number
 from .export import export
+from ..runtime import method
 
 @export
-def min(a: Number, b: Number) -> Number:
+def min(a: Decimal, b: Decimal) -> Decimal:
 	return builtins.min(a, b)
 
 @export
-def max(a: Number, b: Number) -> Number:
+def max(a: Decimal, b: Decimal) -> Decimal:
 	return builtins.max(a, b)

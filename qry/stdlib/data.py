@@ -20,10 +20,16 @@ class DBConn(Protocol):
 	def cursor(self, cursorClass: Optional[type] = ...) -> DBCursor:
 		...
 
+@export
+@dataclass
+class Connection:
+	c: DBConn
+
 class QueryStep(Protocol):
 	def render(self, prev: str) -> str:
 		...
 
+@export
 @dataclass
 class QueryPipeline:
 	conn: DBCursor
@@ -70,6 +76,7 @@ class Join:
 	def render(self, source: str) -> str:
 		return f'select * from ({source}) {self.type.value} join ({self.rhs.render()})'
 
+@export
 @dataclass
 class Grouping:
 	names: List[str]
@@ -90,17 +97,17 @@ class Aggregate:
 		return f'select {select_expr} from ({source}) group by {grouping_expr}'
 
 @export
-def connect_sqlite(connstring: str) -> DBConn:
-	return sqlite3.connect(connstring)
+def connect_sqlite(connstring: str) -> Connection:
+	return Connection(sqlite3.connect(connstring))
 
 @export
-def execute(conn: DBConn, sql: str) -> None:
-	cursor = conn.cursor()
+def execute(conn: Connection, sql: str) -> None:
+	cursor = conn.c.cursor()
 	cursor.execute(sql)
 
 @export
-def get_table(conn: DBConn, table: str) -> QueryPipeline:
-	return QueryPipeline(conn.cursor(), table, [])
+def get_table(conn: Connection, table: str) -> QueryPipeline:
+	return QueryPipeline(conn.c.cursor(), table, [])
 
 @export
 def filter(query: QueryPipeline, expr: Syntax) -> QueryPipeline:
