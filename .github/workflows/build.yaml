@@ -22,11 +22,11 @@ jobs:
     - name: Configure env for non-Linux builds
       run: |
         echo "::set-env name=QRY_CI_NODOCKER::1"
-      if: matrix.os != "ubuntu-18.04"
+      if: matrix.os != 'ubuntu-18.04'
     - name: Set up Docker env
       run: |
         docker-compose up -d
-      if: env.QRY_CI_NODOCKER != "1"
+      if: env.QRY_CI_NODOCKER != '1'
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
