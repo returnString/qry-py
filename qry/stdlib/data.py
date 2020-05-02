@@ -119,11 +119,11 @@ def collect(query: QueryPipeline) -> Any:
 	return query.execute()
 
 @export
-def count_rows(query: QueryPipeline) -> Number:
+def count_rows(query: QueryPipeline) -> int:
 	query = query.chain(Count())
 	data = query.execute()
 	assert isinstance(data[0][0], int)
-	return Number(data[0][0])
+	return data[0][0]
 
 @export
 def group(*by: Expr, **named_by: Expr) -> Grouping:
