@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from enum import Enum
 
 import sqlite3
+import psycopg2
 
 from ..syntax import Expr
 
-from .core import Number
 from .export import export
 
 class DBCursor(Protocol):
@@ -110,6 +110,19 @@ class Aggregate:
 @export
 def connect_sqlite(connstring: str) -> Connection:
 	return Connection(sqlite3.connect(connstring))
+
+@export
+def connect_postgres(host: str, port: int, database: str, user: str, password: str) -> Connection:
+	conn = Connection(psycopg2.connect(
+		host = host,
+		port = port,
+		dbname = database,
+		user = user,
+		password = password,
+	))
+
+	conn.c.autocommit = True # type: ignore
+	return conn
 
 @export
 def execute(conn: Connection, sql: str) -> None:
