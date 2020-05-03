@@ -32,6 +32,13 @@ data_exprs = [
 		|> collect()
 		|> num_rows()
 	''', 9),
+	(f'''
+	max_age <- 26
+	get_table(conn, "{table_name('my_table')}")
+		|> filter(age <= {{{{max_age}}}})
+		|> collect()
+		|> num_rows()
+	''', 1),
 ]
 
 def data_test(connect_code: str) -> Any:

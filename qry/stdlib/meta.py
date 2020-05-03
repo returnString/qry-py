@@ -17,11 +17,11 @@ class AST:
 def ast_to_string(ast: AST) -> str:
 	return ast.root.render()
 
-_eval_in_env: Callable[[Expr, Environment], Any]
+eval_in_env: Callable[[Expr, Environment], Any]
 
-def init(eval_in_env: Callable[[Expr, Environment], Any]) -> None:
-	global _eval_in_env
-	_eval_in_env = eval_in_env
+def init(func: Callable[[Expr, Environment], Any]) -> None:
+	global eval_in_env
+	eval_in_env = func
 
 @export
 def get_ast(_env: Environment, expr: Expr) -> AST:
@@ -29,4 +29,4 @@ def get_ast(_env: Environment, expr: Expr) -> AST:
 
 @export
 def eval_ast(ast: AST) -> Any:
-	return _eval_in_env(ast.root, ast.env)
+	return eval_in_env(ast.root, ast.env)

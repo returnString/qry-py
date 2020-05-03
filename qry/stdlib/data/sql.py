@@ -7,8 +7,11 @@ import sqlite3
 import psycopg2
 import pyarrow
 
-from qry.syntax import Expr
+from qry.syntax import *
 from qry.stdlib.export import export
+from qry.stdlib.core import Int, Float, String, Bool
+from qry.stdlib import meta
+from qry.environment import Environment
 
 from .dataframe import DataFrame
 
@@ -121,6 +124,34 @@ class Aggregate:
 		select_expr = ', '.join(self.by.names + select_computed)
 		return f'select {select_expr} from {render_subquery(source, state)} group by {grouping_expr}'
 
+_sql_binop_translation = {
+	BinaryOp.NOT_EQUAL: "<>",
+}
+
+def sql_interpret_value(value: Any) -> str:
+	if isinstance(value, String):
+		return f'\"{value.val}\""'
+	elif isinstance(value, (Int, Float, Bool)):
+		return str(value.val)
+
+	raise Exception(f'unhandled value for sql: {value}')
+
+def sql_interpret(env: Environment, expr: Expr) -> str:
+	if isinstance(expr, BinaryOpExpr):
+		op = _sql_binop_translation.get(expr.op.value, expr.op.value)
+		return f'{sql_interpret(env, expr.lhs)} {op} {sql_interpret(env, expr.rhs)}'
+	elif isinstance(expr, IdentExpr):
+		return expr.value
+	elif isinstance(expr, CallExpr):
+		args = ', '.join([sql_interpret(env, a) for a in expr.positional_args])
+		return f'{sql_interpret(env, expr.func)}({args})'
+	elif isinstance(expr, (StringLiteral, IntLiteral, FloatLiteral, BoolLiteral)):
+		return sql_interpret_value(expr.value)
+	elif isinstance(expr, InterpolateExpr):
+		return sql_interpret_value(meta.eval_in_env(expr, env))
+
+	raise Exception(f'unhandled expr for sql: {expr}')
+
 @export
 def connect_sqlite(connstring: str) -> Connection:
 	return Connection(sqlite3.connect(connstring, isolation_level = None))
@@ -149,20 +180,24 @@ def get_table(conn: Connection, table: str) -> QueryPipeline:
 	return QueryPipeline(conn.c.cursor(), table, [])
 
 @export
-def filter(query: QueryPipeline, expr: Expr) -> QueryPipeline:
-	return query.chain(Filter([expr.render()]))
+def filter(_env: Environment, query: QueryPipeline, expr: Expr) -> QueryPipeline:
+	return query.chain(Filter([sql_interpret(_env, expr)]))
 
 @export
 def collect(query: QueryPipeline) -> DataFrame:
 	return query.execute()
 
 @export
-def group(*by: Expr, **named_by: Expr) -> Grouping:
-	return Grouping([expr.render() for expr in by], {name: expr.render() for name, expr in named_by.items()})
+def group(_env: Environment, *by: Expr, **named_by: Expr) -> Grouping:
+	return Grouping(
+		[sql_interpret(_env, expr) for expr in by],
+		{name: sql_interpret(_env, expr)
+		for name, expr in named_by.items()},
+	)
 
 @export
-def aggregate(query: QueryPipeline, by: Grouping, **computation: Expr) -> QueryPipeline:
-	return query.chain(Aggregate(by, {name: c.render() for name, c in computation.items()}))
+def aggregate(_env: Environment, query: QueryPipeline, by: Grouping, **computation: Expr) -> QueryPipeline:
+	return query.chain(Aggregate(by, {name: sql_interpret(_env, c) for name, c in computation.items()}))
 
 @export
 def cross_join(query: QueryPipeline, rhs: QueryPipeline) -> QueryPipeline:

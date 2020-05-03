@@ -17,6 +17,9 @@ class Expr(ABC):
 	def render(self) -> str:
 		pass
 
+	def children(self) -> List['Expr']:
+		return [e for e in self.__dict__.values() if isinstance(e, Expr)]
+
 @dataclass
 class AssignExpr(Expr):
 	lhs: Expr
