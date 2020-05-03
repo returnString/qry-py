@@ -2,7 +2,7 @@ from uuid import uuid4
 import os
 from typing import Any, List, Tuple, Optional
 
-from .eval_helpers import data_driven_test
+from ..eval_helpers import data_driven_test
 
 run_id = str(uuid4()).replace('-', '')
 

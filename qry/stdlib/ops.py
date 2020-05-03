@@ -133,3 +133,13 @@ def environment_to_string(obj: Environment) -> str:
 @to_string
 def library_to_string(obj: Library) -> str:
 	return environment_to_string(obj.environment)
+
+@export
+@method
+def num_cols(obj: Any) -> int:
+	pass
+
+@export
+@method
+def num_rows(obj: Any) -> int:
+	pass

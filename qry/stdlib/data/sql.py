@@ -6,9 +6,8 @@ from enum import Enum
 import sqlite3
 import psycopg2
 
-from ..syntax import Expr
-
-from .export import export
+from qry.syntax import Expr
+from qry.stdlib.export import export
 
 class DBCursor(Protocol):
 	def execute(self, sql: str, parameters: Iterable[Any] = ...) -> 'DBCursor':
