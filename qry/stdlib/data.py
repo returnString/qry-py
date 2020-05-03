@@ -54,7 +54,6 @@ class QueryPipeline:
 
 	def execute(self) -> Any:
 		state = RenderState()
-		print(self.render(state))
 		self.conn.execute(self.render(state))
 		return self.conn.fetchall()
 
@@ -109,7 +108,7 @@ class Aggregate:
 
 @export
 def connect_sqlite(connstring: str) -> Connection:
-	return Connection(sqlite3.connect(connstring))
+	return Connection(sqlite3.connect(connstring, isolation_level = None))
 
 @export
 def connect_postgres(host: str, port: int, database: str, user: str, password: str) -> Connection:
