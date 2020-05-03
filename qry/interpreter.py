@@ -209,3 +209,6 @@ class Interpreter:
 			return from_py(py_func(*args, **kwargs))
 
 		raise InterpreterError(f'invalid function: {func}')
+
+	def eval_InterpolateExpr(self, expr: InterpolateExpr, env: Environment) -> Any:
+		return self.eval_in_env(expr.contents, env)

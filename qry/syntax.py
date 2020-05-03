@@ -129,3 +129,10 @@ class CallExpr(Expr):
 		positional = [a.render() for a in self.positional_args]
 		args = ', '.join(positional + named)
 		return f'{self.func.render()}({args})'
+
+@dataclass
+class InterpolateExpr(Expr):
+	contents: Expr
+
+	def render(self) -> str:
+		return f'{{{{{self.contents.render()}}}}}'

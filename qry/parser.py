@@ -89,6 +89,9 @@ class ASTBuilder(Transformer): # type: ignore
 	call_arglist = _passthrough()
 	block_expr = _passthrough()
 
+	def interpolate_expr(self, children: List[Any], meta: Any) -> Any:
+		return InterpolateExpr(self._source_info(meta), children[0])
+
 def _get_data_file(file: str) -> Path:
 	try:
 		base_path = Path(sys._MEIPASS) # type: ignore

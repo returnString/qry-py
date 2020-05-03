@@ -37,6 +37,8 @@ expressions_with_results = [
 	),
 	('"ohai" + ", " + "world"', "ohai, world"),
 	('print("hi there")', None),
+	('{{1}}', 1),
+	('{{1 + 2 * 10}}', 21),
 ]
 
 expressions_with_final_state = [
