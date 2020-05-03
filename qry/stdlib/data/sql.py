@@ -3,8 +3,6 @@ from typing_extensions import Protocol
 from dataclasses import dataclass
 from enum import Enum
 
-import sqlite3
-import psycopg2
 import pyarrow
 
 from qry.syntax import *
