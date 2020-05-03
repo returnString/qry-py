@@ -25,7 +25,8 @@ jobs:
       if: matrix.os != 'ubuntu-18.04'
     - name: Configure macOS runner
       run: |
-        xcode-select --install
+        echo "::set-env name=LDFLAGS::'-L/usr/local/opt/openssl/lib'"
+        echo "::set-env name=CPPFLAGS::'-I/usr/local/opt/openssl/include'"
       if: matrix.os == 'macos-10.15'
     - name: Set up Docker env
       run: |
