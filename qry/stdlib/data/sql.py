@@ -155,23 +155,6 @@ def sql_interpret(env: Environment, expr: Expr) -> str:
 	raise Exception(f'unhandled expr for sql: {expr}')
 
 @export
-def connect_sqlite(connstring: str) -> Connection:
-	return Connection(sqlite3.connect(connstring, isolation_level = None))
-
-@export
-def connect_postgres(host: str, port: int, database: str, user: str, password: str) -> Connection:
-	conn = Connection(psycopg2.connect(
-		host = host,
-		port = port,
-		dbname = database,
-		user = user,
-		password = password,
-	))
-
-	conn.c.autocommit = True # type: ignore
-	return conn
-
-@export
 def execute(conn: Connection, sql: str) -> int:
 	cursor = conn.c.cursor()
 	cursor.execute(sql)
