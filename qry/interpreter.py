@@ -147,19 +147,18 @@ class Interpreter:
 		return Function(args, expr.body, env.child_env('func_closure'))
 
 	def eval_CallExpr(self, expr: CallExpr, env: Environment) -> Any:
-		func = self.eval_in_env(expr.func, env)
+		target = self.eval_in_env(expr.func, env)
 
 		method = None
-		if isinstance(func, Method):
-			method = func
-			# TODO: treat methods properly with declared args
-			func = method.default_func
+		if isinstance(target, Method):
+			method = target
+			target = method.default_func
 			func_args = method.args
 		else:
-			func_args = func.args
+			func_args = target.args
 
-		if isinstance(func, Function):
-			func_env = func.environment.child_env('exec')
+		if isinstance(target, Function):
+			func_env = target.environment.child_env('exec')
 			for arg, provided_expr in zip(func_args, expr.positional_args):
 				if arg.eval_immediate:
 					func_env.state[arg.name] = self.eval_in_env(provided_expr, env)
@@ -167,16 +166,16 @@ class Interpreter:
 					func_env.state[arg.name] = provided_expr
 
 			ret = None
-			for e in func.body:
+			for e in target.body:
 				ret = self.eval_in_env(e, func_env)
 
 			return ret
-		elif isinstance(func, BuiltinFunction):
+		elif isinstance(target, BuiltinFunction):
 			args: List[Any] = []
-			if func.implicit_caller_env:
+			if target.implicit_caller_env:
 				args.append(env)
 
-			type_args: List[type] = []
+			type_args: List[Any] = []
 			kwargs: Dict[str, Any] = {}
 
 			def arg_eval_wrapper(arg: Argument, target: Expr) -> Any:
@@ -209,19 +208,18 @@ class Interpreter:
 				last_arg = func_args[-1]
 				if last_arg.mode == ArgumentMode.KWARGS:
 					if last_arg.eval_immediate:
-						# TODO: make kwargs play nicely with to_py
-						kwargs = {name: self.eval_in_env(e, env) for name, e in expr.named_args.items()}
+						kwargs = {name: arg_eval_wrapper(last_arg, e) for name, e in expr.named_args.items()}
 					else:
 						kwargs = expr.named_args
 
 			if method:
 				ret = method.call(*args, type_params = type_args)
 			else:
-				ret = func.func(*args, **kwargs)
+				ret = target.func(*args, **kwargs)
 
 			return from_py(ret)
 
-		raise InterpreterError(f'invalid function: {func}')
+		raise InterpreterError(f'invalid function: {target}')
 
 	def eval_InterpolateExpr(self, expr: InterpolateExpr, env: Environment) -> Any:
 		return self.eval_in_env(expr.contents, env)

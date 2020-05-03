@@ -8,9 +8,8 @@ from .environment import Environment
 from .stdlib.core import String, Float, Int, Bool, Null
 from .stdlib.export import is_exported
 
-@dataclass
 class TypeParam:
-	type: type
+	pass
 
 class ArgumentMode(Enum):
 	STANDARD = auto()
