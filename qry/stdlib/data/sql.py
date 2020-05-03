@@ -126,6 +126,8 @@ class Aggregate:
 
 _sql_binop_translation = {
 	BinaryOp.NOT_EQUAL: "<>",
+	BinaryOp.AND: "and",
+	BinaryOp.OR: "or",
 }
 
 def sql_interpret_value(value: Any) -> str:
@@ -138,7 +140,7 @@ def sql_interpret_value(value: Any) -> str:
 
 def sql_interpret(env: Environment, expr: Expr) -> str:
 	if isinstance(expr, BinaryOpExpr):
-		op = _sql_binop_translation.get(expr.op.value, expr.op.value)
+		op = _sql_binop_translation.get(expr.op, expr.op.value)
 		return f'{sql_interpret(env, expr.lhs)} {op} {sql_interpret(env, expr.rhs)}'
 	elif isinstance(expr, IdentExpr):
 		return expr.value
