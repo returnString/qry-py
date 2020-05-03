@@ -130,7 +130,7 @@ _sql_binop_translation = {
 
 def sql_interpret_value(value: Any) -> str:
 	if isinstance(value, String):
-		return f'\"{value.val}\""'
+		return f'\'{value.val}\''
 	elif isinstance(value, (Int, Float, Bool)):
 		return str(value.val)
 
