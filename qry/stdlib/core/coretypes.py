@@ -1,4 +1,3 @@
-from decimal import Decimal
 from dataclasses import dataclass
 from typing import Union, Callable, Any
 
@@ -6,11 +5,14 @@ from qry.environment import Environment
 from qry.stdlib.export import export
 
 @export
-class Number:
-	val: Decimal
+@dataclass
+class Int:
+	val: int
 
-	def __init__(self, val: Union[Decimal, int, float]) -> None:
-		self.val = Decimal(val)
+@export
+@dataclass
+class Float:
+	val: float
 
 @export
 @dataclass

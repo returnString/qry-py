@@ -4,7 +4,8 @@ literal: "null" -> null_literal
 	| "true" -> bool_literal_true
 	| "false" -> bool_literal_false
 	| STRING -> string_literal
-	| NUMBER -> number_literal
+	| INT -> int_literal
+	| FLOAT -> float_literal
 
 ?expr: rassign_expr
 ?rassign_expr: lassign_expr (RASSIGN_OP lassign_expr)*
@@ -41,7 +42,8 @@ MUL_OP: "/" | "*"
 ACCESS_OP: "."
 PIPE_OP.2: "|>"
 
-%import common.NUMBER
+%import common.INT
+%import common.FLOAT
 %import common.ESCAPED_STRING -> STRING
 %import common.CNAME -> IDENT
 %import common.WS

@@ -6,7 +6,7 @@ from .syntax import *
 from .runtime import *
 from .environment import Environment
 
-from .stdlib import export, core, ops, meta, math, data
+from .stdlib import export, core, ops, meta, data
 
 _eager_binop_lookup = {
 	BinaryOp.ADD: ops.add,
@@ -41,7 +41,6 @@ class Interpreter:
 		self.load_library(ops, True)
 		meta.init(self.eval_in_env)
 		self.load_library(meta, False)
-		self.load_library(math, False)
 		self.load_library(data, False)
 
 	def eval(self, expr: Expr) -> Any:
@@ -124,7 +123,10 @@ class Interpreter:
 	def eval_BoolLiteral(self, expr: BoolLiteral, env: Environment) -> Any:
 		return expr.value
 
-	def eval_NumberLiteral(self, expr: NumberLiteral, env: Environment) -> Any:
+	def eval_IntLiteral(self, expr: IntLiteral, env: Environment) -> Any:
+		return expr.value
+
+	def eval_FloatLiteral(self, expr: FloatLiteral, env: Environment) -> Any:
 		return expr.value
 
 	def eval_StringLiteral(self, expr: StringLiteral, env: Environment) -> Any:

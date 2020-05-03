@@ -2,11 +2,10 @@ from typing import List, Any, Dict, Callable, Optional
 from dataclasses import dataclass, field
 import inspect
 from enum import Enum, auto
-from decimal import Decimal
 
 from .syntax import Expr, FuncExpr
 from .environment import Environment
-from .stdlib.core import String, Number, Bool, Null
+from .stdlib.core import String, Float, Int, Bool, Null
 from .stdlib.export import is_exported
 
 class ArgumentMode(Enum):
@@ -36,7 +35,6 @@ _builtin_arg_types_to_convert = {
 	bool,
 	int,
 	float,
-	Decimal,
 }
 
 def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
@@ -52,7 +50,7 @@ def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 		annotated_type in _builtin_arg_types_to_convert)
 
 def to_py(obj: Any) -> Any:
-	if isinstance(obj, (String, Number, Bool)):
+	if isinstance(obj, (String, Int, Float, Bool)):
 		return obj.val
 	elif isinstance(obj, Null):
 		return None
@@ -64,8 +62,10 @@ def from_py(obj: Any) -> Any:
 		return obj
 	elif isinstance(obj, bool):
 		return Bool(obj)
-	if isinstance(obj, (int, float, Decimal)):
-		return Number(obj)
+	if isinstance(obj, int):
+		return Int(obj)
+	if isinstance(obj, float):
+		return Float(obj)
 	elif isinstance(obj, str):
 		return String(obj)
 	elif obj is None:
