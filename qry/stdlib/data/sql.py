@@ -5,9 +5,12 @@ from enum import Enum
 
 import sqlite3
 import psycopg2
+import pyarrow
 
 from qry.syntax import Expr
 from qry.stdlib.export import export
+
+from .dataframe import DataFrame
 
 class DBCursor(Protocol):
 	def execute(self, sql: str, parameters: Iterable[Any] = ...) -> 'DBCursor':
@@ -15,6 +18,8 @@ class DBCursor(Protocol):
 
 	def fetchall(self) -> Any:
 		...
+
+	description: Any
 
 class DBConn(Protocol):
 	def cursor(self, cursorClass: Optional[type] = ...) -> DBCursor:
@@ -36,14 +41,14 @@ class QueryStep(Protocol):
 @export
 @dataclass
 class QueryPipeline:
-	conn: DBCursor
+	cursor: DBCursor
 	source_table: str
 	steps: List[QueryStep]
 
 	def chain(self, step: QueryStep) -> 'QueryPipeline':
 		steps = self.steps.copy()
 		steps.append(step)
-		return QueryPipeline(self.conn, self.source_table, steps)
+		return QueryPipeline(self.cursor, self.source_table, steps)
 
 	def render(self, state: RenderState) -> str:
 		query = f'select * from {self.source_table}'
@@ -51,10 +56,20 @@ class QueryPipeline:
 			query = step.render(query, state)
 		return query
 
-	def execute(self) -> Any:
+	def execute(self) -> DataFrame:
 		state = RenderState()
-		self.conn.execute(self.render(state))
-		return self.conn.fetchall()
+		self.cursor.execute(self.render(state))
+		column_names = [desc[0] for desc in self.cursor.description]
+		rows = self.cursor.fetchall()
+		column_data: List[Any] = [[] for c in column_names]
+
+		for row_index, row in enumerate(rows):
+			for col_index in range(0, len(column_names)):
+				col = column_data[col_index]
+				col.append(row[col_index])
+
+		table = pyarrow.Table.from_arrays([pyarrow.array(a) for a in column_data], column_names)
+		return DataFrame(table)
 
 def render_subquery(source: str, state: RenderState) -> str:
 	state.alias_counter += 1
@@ -136,15 +151,8 @@ def filter(query: QueryPipeline, expr: Expr) -> QueryPipeline:
 	return query.chain(Filter([expr.render()]))
 
 @export
-def collect(query: QueryPipeline) -> Any:
+def collect(query: QueryPipeline) -> DataFrame:
 	return query.execute()
-
-@export
-def count_rows(query: QueryPipeline) -> int:
-	query = query.chain(Count())
-	data = query.execute()
-	assert isinstance(data[0][0], int)
-	return data[0][0]
 
 @export
 def group(*by: Expr, **named_by: Expr) -> Grouping:

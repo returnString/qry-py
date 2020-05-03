@@ -17,17 +17,20 @@ data_exprs = [
 	(f'''
 	get_table(conn, "{table_name('my_table')}")
 		|> filter(age <= 26)
-		|> count_rows()
+		|> collect()
+		|> num_rows()
 	''', 1),
 	(f'''
 	get_table(conn, "{table_name('my_table')}")
 		|> aggregate(group(age), total_years = sum(age))
-		|> count_rows()
+		|> collect()
+		|> num_rows()
 	''', 2),
 	(f'''
 	get_table(conn, "{table_name('my_table')}")
 		|> cross_join(get_table(conn, "{table_name('my_table')}"))
-		|> count_rows()
+		|> collect()
+		|> num_rows()
 	''', 9),
 ]
 
