@@ -13,7 +13,7 @@ data_exprs = [
 	(f'''
 	execute(conn, "create table {table_name('my_table')} (name text, age integer)")
 	execute(conn, "insert into {table_name('my_table')}(name, age) values ('ruan', 26), ('ruanlater', 27), ('thirdperson', 27)")
-	''', None),
+	''', 3),
 	(f'''
 	get_table(conn, "{table_name('my_table')}")
 		|> filter(age <= 26)

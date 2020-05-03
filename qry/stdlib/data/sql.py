@@ -20,6 +20,7 @@ class DBCursor(Protocol):
 		...
 
 	description: Any
+	rowcount: int
 
 class DBConn(Protocol):
 	def cursor(self, cursorClass: Optional[type] = ...) -> DBCursor:
@@ -138,9 +139,10 @@ def connect_postgres(host: str, port: int, database: str, user: str, password: s
 	return conn
 
 @export
-def execute(conn: Connection, sql: str) -> None:
+def execute(conn: Connection, sql: str) -> int:
 	cursor = conn.c.cursor()
 	cursor.execute(sql)
+	return cursor.rowcount
 
 @export
 def get_table(conn: Connection, table: str) -> QueryPipeline:
