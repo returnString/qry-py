@@ -2,11 +2,11 @@
 
 from glob import glob
 from os import path
-from shutil import copyfile
+from shutil import copy
 
 for init_path in glob('**/__init__.py', recursive = True):
 	interface_path = init_path.replace('.py', '.pyi')
-	if path.isfile(interface_path) or path.getsize(init_path) == 0:
+	if path.getsize(init_path) == 0:
 		continue
 
-	copyfile(init_path, interface_path)
+	copy(init_path, interface_path)
