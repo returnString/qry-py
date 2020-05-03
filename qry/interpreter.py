@@ -154,10 +154,13 @@ class Interpreter:
 			method = func
 			# TODO: treat methods properly with declared args
 			func = method.default_func
+			func_args = method.args
+		else:
+			func_args = func.args
 
 		if isinstance(func, Function):
 			func_env = func.environment.child_env('exec')
-			for arg, provided_expr in zip(func.args, expr.positional_args):
+			for arg, provided_expr in zip(func_args, expr.positional_args):
 				if arg.eval_immediate:
 					func_env.state[arg.name] = self.eval_in_env(provided_expr, env)
 				else:
@@ -173,6 +176,7 @@ class Interpreter:
 			if func.implicit_caller_env:
 				args.append(env)
 
+			type_args: List[type] = []
 			kwargs: Dict[str, Any] = {}
 
 			def arg_eval_wrapper(arg: Argument, target: Expr) -> Any:
@@ -182,7 +186,7 @@ class Interpreter:
 				return ret
 
 			for i, provided_expr in enumerate(expr.positional_args):
-				arg = func.args[i]
+				arg = func_args[i]
 				if arg.mode == ArgumentMode.VARARGS:
 					remaining_args = expr.positional_args[i:]
 
@@ -192,14 +196,17 @@ class Interpreter:
 						else:
 							args.append(vararg)
 					break
+				elif arg.mode == ArgumentMode.TYPEPARAM:
+					arg_type = arg_eval_wrapper(arg, provided_expr)
+					type_args.append(arg_type)
 				else:
 					if arg.eval_immediate:
 						args.append(arg_eval_wrapper(arg, provided_expr))
 					else:
 						args.append(provided_expr)
 
-			if func.args:
-				last_arg = func.args[-1]
+			if func_args:
+				last_arg = func_args[-1]
 				if last_arg.mode == ArgumentMode.KWARGS:
 					if last_arg.eval_immediate:
 						# TODO: make kwargs play nicely with to_py
@@ -207,8 +214,12 @@ class Interpreter:
 					else:
 						kwargs = expr.named_args
 
-			py_func = method.call if method else func.func
-			return from_py(py_func(*args, **kwargs))
+			if method:
+				ret = method.call(*args, type_params = type_args)
+			else:
+				ret = func.func(*args, **kwargs)
+
+			return from_py(ret)
 
 		raise InterpreterError(f'invalid function: {func}')
 

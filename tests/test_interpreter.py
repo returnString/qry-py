@@ -39,6 +39,7 @@ expressions_with_results = [
 	('print("hi there")', None),
 	('{{1}}', 1),
 	('{{1 + 2 * 10}}', 21),
+	('cast(Int, 2.5)', 2),
 ]
 
 expressions_with_final_state = [

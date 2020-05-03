@@ -8,10 +8,15 @@ from .environment import Environment
 from .stdlib.core import String, Float, Int, Bool, Null
 from .stdlib.export import is_exported
 
+@dataclass
+class TypeParam:
+	type: type
+
 class ArgumentMode(Enum):
 	STANDARD = auto()
 	VARARGS = auto()
 	KWARGS = auto()
+	TYPEPARAM = auto()
 
 @dataclass
 class Argument:
@@ -43,6 +48,8 @@ def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 		mode = ArgumentMode.VARARGS
 	elif arg_spec.varkw == name:
 		mode = ArgumentMode.KWARGS
+	elif annotated_type == TypeParam:
+		mode = ArgumentMode.TYPEPARAM
 	else:
 		mode = ArgumentMode.STANDARD
 
@@ -103,22 +110,32 @@ def _method_sig(types: List[type]) -> str:
 
 @dataclass
 class Method:
+	args: List[Argument]
 	default_func: BuiltinFunction
 	funcs: Dict[str, BuiltinFunction] = field(default_factory = dict)
 
-	def __call__(self, impl_func: Callable[..., Any]) -> Callable[..., Any]:
+	def _register(self, impl_func: Callable[..., Any], *types: type) -> Callable[..., Any]:
 		func_obj = BuiltinFunction.from_func(impl_func)
-		args = [a.type for a in func_obj.args]
+		args = list(types) + [a.type for a in func_obj.args]
 		self.funcs[_method_sig(args)] = func_obj
 		return impl_func
+
+	def __call__(self, impl_func: Callable[..., Any]) -> Callable[..., Any]:
+		return self._register(impl_func)
+
+	def generic(self, *types: type) -> Callable[..., Any]:
+		def wrapper(impl_func: Callable[..., Any]) -> Callable[..., Any]:
+			return self._register(impl_func, *types)
+
+		return wrapper
 
 	def _resolve(self, types: List[type]) -> BuiltinFunction:
 		return self.funcs.get(_method_sig(types), self.default_func)
 
 	_no_default = object()
 
-	def call(self, *args: Any, default: Any = _no_default) -> Any:
-		func = self._resolve([type(a) for a in args])
+	def call(self, *args: Any, type_params: List[type] = [], default: Any = _no_default) -> Any:
+		func = self._resolve(type_params + [type(a) for a in args])
 		if func.func == _unimplemented and default != self._no_default:
 			return default
 
@@ -131,6 +148,6 @@ def _unimplemented(*args: Any, **kwargs: Any) -> None:
 
 def method(ref_func: Callable[..., Any]) -> Method:
 	default_func = ref_func if ref_func.__code__.co_code != _empty_func.__code__.co_code else _unimplemented
-	meth = Method(BuiltinFunction.from_func(default_func))
+	meth = Method(BuiltinFunction.from_func(ref_func).args, BuiltinFunction.from_func(default_func))
 	setattr(meth, '__name__', ref_func.__name__)
 	return meth

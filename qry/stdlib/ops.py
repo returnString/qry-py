@@ -5,7 +5,7 @@ import builtins
 from .core import String, Int, Float, Bool
 from .export import export
 from ..environment import Environment
-from ..runtime import method, from_py, FunctionBase, Function, BuiltinFunction, Method, Library
+from ..runtime import method, from_py, FunctionBase, Function, BuiltinFunction, Method, Library, TypeParam
 
 @method
 def add(a: Any, b: Any) -> Any:
@@ -137,7 +137,8 @@ def builtin_to_string(obj: BuiltinFunction) -> str:
 
 @to_string
 def method_to_string(obj: Method) -> str:
-	return 'fn(...)'
+	options = ','.join(obj.funcs.keys())
+	return f'fn(...): {options}'
 
 def environment_to_string(obj: Environment) -> str:
 	parent = obj.parent.name if obj.parent else 'none'
@@ -156,3 +157,16 @@ def num_cols(obj: Any) -> int:
 @method
 def num_rows(obj: Any) -> int:
 	pass
+
+@export
+@method
+def cast(target_type: TypeParam, obj: Any) -> Any:
+	pass
+
+@cast.generic(Int)
+def float_to_int(obj: Float) -> int:
+	return int(obj.val)
+
+@cast.generic(Float)
+def int_to_float(obj: Int) -> float:
+	return float(obj.val)
