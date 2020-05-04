@@ -5,7 +5,7 @@ import pytest
 from qry.interpreter import Interpreter
 from qry.runtime import BuiltinFunction, QryRuntimeError
 from .eval_helpers import eval, eval_single, data_driven_test
-from . import examplelib
+from .data import examplelib
 
 expressions_with_results = [
 	('0', 0),
@@ -101,5 +101,5 @@ def test_builtin_eval() -> None:
 def test_library_load() -> None:
 	interpreter = Interpreter()
 	interpreter.load_library(examplelib, True)
-	assert eval_single('my_mul_method(2, 5)', interpreter) == 10
-	assert eval_single('examplelib.my_mul_method(2, 5)', interpreter) == 10
+	assert eval_single('my_mul_func(2, 5)', interpreter) == 10
+	assert eval_single('examplelib.my_mul_func(2, 5)', interpreter) == 10

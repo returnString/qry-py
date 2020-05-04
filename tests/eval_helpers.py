@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple, Optional
+from typing import Any, List, Tuple, Optional, Callable
 
 import pytest
 
@@ -18,14 +18,20 @@ def eval_single(source: str, interpreter: Optional[Interpreter] = None) -> Any:
 	assert len(results) == 1
 	return results[0]
 
-def data_driven_test(data: List[Tuple[str, Any]]) -> Any:
+def data_driven_test(data: List[Tuple[str, Any]],
+	init_interpreter: Optional[Callable[[Interpreter], None]] = None) -> Any:
 	@pytest.mark.parametrize("source, expected_result", data)
 	def testwrapper(source: str, expected_result: Any) -> None:
+		interpreter = Interpreter()
+
+		if init_interpreter:
+			init_interpreter(interpreter)
+
 		if isinstance(expected_result, QryRuntimeError):
 			with pytest.raises(QryRuntimeError, match = str(expected_result)):
-				eval(source)
+				eval(source, interpreter)
 		else:
-			results = eval(source)
+			results = eval(source, interpreter)
 			if isinstance(expected_result, list):
 				assert results == expected_result
 			else:
