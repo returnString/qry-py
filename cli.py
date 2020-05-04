@@ -2,7 +2,8 @@ from cmd import Cmd
 import builtins
 
 from qry.parser import Parser
-from qry.interpreter import Interpreter, InterpreterError
+from qry.interpreter import Interpreter
+from qry.runtime import QryRuntimeError
 from qry.stdlib.ops import print
 
 parser = Parser()
@@ -17,7 +18,7 @@ class QryCmd(Cmd):
 				val = interpreter.eval(expr)
 				builtins.print(f'({type(val).__name__}) ', end = '')
 				print.call(val)
-		except InterpreterError as err:
+		except QryRuntimeError as err:
 			builtins.print(err)
 
 		return False

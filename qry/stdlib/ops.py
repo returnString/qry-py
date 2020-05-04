@@ -9,51 +9,51 @@ from ..runtime import method, from_py, FunctionBase, Function, BuiltinFunction, 
 
 @method
 def add(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def subtract(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def divide(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def multiply(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def equal(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def not_equal(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def greater_than(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def greater_than_or_equal(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def less_than(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def less_than_or_equal(a: Any, b: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def negate_logical(a: Any) -> Any:
-	pass
+	return NotImplemented
 
 @method
 def negate_arithmetic(a: Any) -> Any:
-	pass
+	return NotImplemented
 
 @add
 def string_concat(a: String, b: String) -> String:
@@ -99,8 +99,8 @@ not_equal(binop(Bool, Bool, operator.ne))
 
 @export
 @method
-def to_string(obj: Any) -> str:
-	pass
+def to_string(obj: Any) -> Any:
+	return NotImplemented
 
 @export
 @method
@@ -150,18 +150,18 @@ def library_to_string(obj: Library) -> str:
 
 @export
 @method
-def num_cols(obj: Any) -> int:
-	pass
+def num_cols(obj: Any) -> Any:
+	return NotImplemented
 
 @export
 @method
-def num_rows(obj: Any) -> int:
-	pass
+def num_rows(obj: Any) -> Any:
+	return NotImplemented
 
 @export
 @method
 def cast(target_type: TypeParam, obj: Any) -> Any:
-	pass
+	return NotImplemented
 
 @cast.generic(Int)
 def float_to_int(obj: Float) -> int:

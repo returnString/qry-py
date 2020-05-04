@@ -26,9 +26,6 @@ _eager_unop_lookup = {
 	UnaryOp.NEGATE_ARITH: ops.negate_arithmetic,
 }
 
-class InterpreterError(Exception):
-	pass
-
 class Interpreter:
 	root_env: Environment
 	global_env: Environment
@@ -49,7 +46,7 @@ class Interpreter:
 	def _get_lib_name(self, lib_instance: ModuleType) -> str:
 		lib_name = lib_instance.__name__.split('.')[-1]
 		if lib_name is None:
-			raise InterpreterError('failed to retrieve lib name')
+			raise QryRuntimeError('failed to retrieve lib name')
 		return lib_name
 
 	def load_library(self, lib_module: ModuleType, attach_global: bool) -> None:
@@ -107,11 +104,11 @@ class Interpreter:
 			method = _eager_binop_lookup[expr.op]
 			return method.call(lhs, rhs)
 
-		raise InterpreterError(f'unsupported binary op: {expr.op}')
+		raise QryRuntimeError(f'unsupported binary op: {expr.op}')
 
 	def _find_in_env(self, env: Environment, ident: IdentExpr) -> Any:
 		if ident.value not in env.state:
-			raise InterpreterError(f'not found: {ident.value}')
+			raise QryRuntimeError(f'not found: {ident.value}')
 
 		return env.state[ident.value]
 
@@ -153,7 +150,7 @@ class Interpreter:
 		if isinstance(target, Method):
 			method = target
 			target = method.default_func
-			func_args = method.args
+			func_args = method.default_func.args
 		else:
 			func_args = target.args
 
@@ -219,7 +216,7 @@ class Interpreter:
 
 			return from_py(ret)
 
-		raise InterpreterError(f'invalid function: {target}')
+		raise QryRuntimeError(f'invalid function: {target}')
 
 	def eval_InterpolateExpr(self, expr: InterpolateExpr, env: Environment) -> Any:
 		return self.eval_in_env(expr.contents, env)

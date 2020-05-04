@@ -8,6 +8,9 @@ from .environment import Environment
 from .stdlib.core import String, Float, Int, Bool, Null
 from .stdlib.export import is_exported
 
+class QryRuntimeError(Exception):
+	pass
+
 class TypeParam:
 	pass
 
@@ -77,7 +80,7 @@ def from_py(obj: Any) -> Any:
 	elif obj is None:
 		return Null()
 
-	raise Exception(f'returning unsupported type ({type(obj)}) to qry: {obj}')
+	raise QryRuntimeError(f'returning unsupported type ({type(obj)}) to qry: {obj}')
 
 @dataclass
 class BuiltinFunction(FunctionBase):
@@ -109,7 +112,6 @@ def _method_sig(types: List[type]) -> str:
 
 @dataclass
 class Method:
-	args: List[Argument]
 	default_func: BuiltinFunction
 	funcs: Dict[str, BuiltinFunction] = field(default_factory = dict)
 
@@ -128,25 +130,20 @@ class Method:
 
 		return wrapper
 
-	def _resolve(self, types: List[type]) -> BuiltinFunction:
-		return self.funcs.get(_method_sig(types), self.default_func)
-
 	_no_default = object()
 
 	def call(self, *args: Any, type_params: List[type] = [], default: Any = _no_default) -> Any:
-		func = self._resolve(type_params + [type(a) for a in args])
-		if func.func == _unimplemented and default != self._no_default:
-			return default
+		sig = _method_sig((type_params + [type(a) for a in args]))
+		func = self.funcs.get(sig, self.default_func)
+		ret = func.func(*args)
+		if ret == NotImplemented:
+			if default != self._no_default:
+				return default
+			raise QryRuntimeError(f'unimplemented method "{func.func.__name__}" for signature: {sig}')
 
-		return func.func(*args)
-
-_empty_func = lambda: None
-
-def _unimplemented(*args: Any, **kwargs: Any) -> None:
-	raise Exception(f'not implemented')
+		return ret
 
 def method(ref_func: Callable[..., Any]) -> Method:
-	default_func = ref_func if ref_func.__code__.co_code != _empty_func.__code__.co_code else _unimplemented
-	meth = Method(BuiltinFunction.from_func(ref_func).args, BuiltinFunction.from_func(default_func))
+	meth = Method(BuiltinFunction.from_func(ref_func))
 	setattr(meth, '__name__', ref_func.__name__)
 	return meth
