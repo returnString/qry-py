@@ -135,7 +135,13 @@ class Method:
 	def call(self, *args: Any, type_params: List[type] = [], default: Any = _no_default) -> Any:
 		sig = _method_sig((type_params + [type(a) for a in args]))
 		func = self.funcs.get(sig, self.default_func)
-		ret = func.func(*args)
+
+		# supply unhandled types as actual args for fallback generic dispatch
+		if func == self.default_func and len(type_params):
+			ret = func.func(*(type_params + list(args)))
+		else:
+			ret = func.func(*args)
+
 		if ret == NotImplemented:
 			if default != self._no_default:
 				return default

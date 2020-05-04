@@ -2,7 +2,7 @@ from typing import Any
 
 from qry.stdlib.core import String, Int
 from qry.stdlib.export import export
-from qry.runtime import method
+from qry.runtime import method, TypeParam
 
 @export
 def my_mul_func(arg1: int, arg2: int) -> int:
@@ -29,3 +29,12 @@ def str_or_fallback_method(obj: Any) -> Any:
 @str_or_fallback_method
 def str_or_fallback_method_str(obj: String) -> Any:
 	return obj
+
+@export
+@method
+def generic_dispatch(t: TypeParam) -> Any:
+	return getattr(t, '__name__')
+
+@generic_dispatch.generic(Int)
+def generic_dispatch_int() -> Any:
+	return 'special int'

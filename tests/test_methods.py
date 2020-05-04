@@ -14,6 +14,9 @@ method_tests = [
 	('str_or_fallback_method("test")', 'test'),
 	('str_or_fallback_method(1)', 'fallback'),
 	('str_or_fallback_method(null)', 'fallback'),
+	('generic_dispatch(Int)', 'special int'),
+	('generic_dispatch(Float)', 'Float'),
+	('generic_dispatch(String)', 'String'),
 ]
 
 test_methods = data_driven_test(method_tests, init_interpreter)
