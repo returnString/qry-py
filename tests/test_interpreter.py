@@ -3,7 +3,7 @@ from typing import Any, List, Tuple, Dict
 import pytest
 
 from qry.interpreter import Interpreter
-from qry.runtime import BuiltinFunction
+from qry.runtime import BuiltinFunction, QryRuntimeError
 from .eval_helpers import eval, eval_single, data_driven_test
 from . import examplelib
 
@@ -40,6 +40,7 @@ expressions_with_results = [
 	('{{1}}', 1),
 	('{{1 + 2 * 10}}', 21),
 	('cast(Int, 2.5)', 2),
+	('x', QryRuntimeError('not found: x')),
 ]
 
 expressions_with_final_state = [
