@@ -140,8 +140,9 @@ def method_to_string(obj: Method) -> str:
 	return f'method {obj.name}(...) with specialisations:\n{options}'
 
 def environment_to_string(obj: Environment) -> str:
-	parent = obj.parent.name if obj.parent else 'none'
-	return f'{obj.name} (parent: {parent}, entries: {len(obj.state)})'
+	chain = ' -> '.join([e.name for e in obj.chain()])
+	entries = '\n'.join([f'- ({type(v).__name__}) {k}' for k, v in obj.state.items()])
+	return f'{obj.name} (chain: {chain}):\n{entries}'
 
 @to_string
 def library_to_string(obj: Library) -> str:
