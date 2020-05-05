@@ -136,8 +136,8 @@ def builtin_to_string(obj: BuiltinFunction) -> str:
 
 @to_string
 def method_to_string(obj: Method) -> str:
-	options = ','.join(obj.funcs.keys())
-	return f'fn(...): {options}'
+	options = '\n'.join([f'{obj.name}({k})' for k in obj.funcs.keys()])
+	return f'method {obj.name}(...) with specialisations:\n{options}'
 
 def environment_to_string(obj: Environment) -> str:
 	parent = obj.parent.name if obj.parent else 'none'

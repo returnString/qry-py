@@ -9,6 +9,7 @@ def _method_sig(types: List[type]) -> str:
 
 @dataclass
 class Method:
+	name: str
 	default_func: BuiltinFunction
 	funcs: Dict[str, BuiltinFunction] = field(default_factory = dict)
 
@@ -43,6 +44,6 @@ class Method:
 		return ret
 
 def method(ref_func: Callable[..., Any]) -> Method:
-	meth = Method(BuiltinFunction.from_func(ref_func))
+	meth = Method(ref_func.__name__, BuiltinFunction.from_func(ref_func))
 	setattr(meth, '__name__', ref_func.__name__)
 	return meth
