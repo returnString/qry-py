@@ -3,10 +3,11 @@ from types import ModuleType, FunctionType
 import copy
 
 from qry.common import get_all_exported_objs
-from qry.runtime import Environment, Argument, ArgumentMode, QryRuntimeError, BuiltinFunction, Function, Library, Method, from_py, to_py
+from qry.stdlib import core, ops, meta, data
 from qry.lang import *
 
-from .stdlib import core, ops, meta, data
+from qry.runtime import Environment, QryRuntimeError, Library, to_py, from_py
+from qry.runtime import Method, Function, BuiltinFunction, Argument, ArgumentMode
 
 _eager_binop_lookup = {
 	BinaryOp.ADD: ops.add,
