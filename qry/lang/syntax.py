@@ -3,7 +3,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional
 
-from .stdlib.core import Int, Float, String, Bool, Null
+from .coretypes import String, Int, Float, Bool
 
 @dataclass
 class SourceInfo:
@@ -86,28 +86,28 @@ class StringLiteral(Expr):
 	value: String
 
 	def render(self) -> str:
-		return f'"{self.value.val}"'
+		return f'"{self.value}"'
 
 @dataclass
 class IntLiteral(Expr):
 	value: Int
 
 	def render(self) -> str:
-		return str(self.value.val)
+		return str(self.value)
 
 @dataclass
 class FloatLiteral(Expr):
 	value: Float
 
 	def render(self) -> str:
-		return str(self.value.val)
+		return str(self.value)
 
 @dataclass
 class BoolLiteral(Expr):
 	value: Bool
 
 	def render(self) -> str:
-		return str(self.value.val)
+		return str(self.value)
 
 @dataclass
 class IdentExpr(Expr):

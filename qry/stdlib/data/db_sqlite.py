@@ -1,6 +1,6 @@
 import sqlite3
 
-from qry.stdlib.export import export
+from qry.common import export
 
 from .sql import Connection
 

@@ -5,11 +5,10 @@ from enum import Enum
 
 import pyarrow
 
-from qry.syntax import *
-from qry.stdlib.export import export
-from qry.stdlib.core import Int, Float, String, Bool
+from qry.common import export
+from qry.lang import *
+from qry.runtime import Environment
 from qry.stdlib import meta
-from qry.environment import Environment
 
 from .dataframe import DataFrame
 

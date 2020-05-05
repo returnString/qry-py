@@ -1,6 +1,6 @@
 import psycopg2
 
-from qry.stdlib.export import export
+from qry.common import export
 
 from .sql import Connection
 

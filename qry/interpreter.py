@@ -2,11 +2,11 @@ from typing import Dict, Any, List
 from types import ModuleType, FunctionType
 import copy
 
-from .syntax import *
-from .runtime import *
-from .environment import Environment
+from qry.common import get_all_exported_objs
+from qry.runtime import Environment, Argument, ArgumentMode, QryRuntimeError, BuiltinFunction, Function, Library, Method, from_py, to_py
+from qry.lang import *
 
-from .stdlib import export, core, ops, meta, data
+from .stdlib import core, ops, meta, data
 
 _eager_binop_lookup = {
 	BinaryOp.ADD: ops.add,
@@ -53,7 +53,7 @@ class Interpreter:
 		lib_name = self._get_lib_name(lib_module)
 
 		lib_state = {}
-		export_list = export.get_all_exported_objs(lib_module)
+		export_list = get_all_exported_objs(lib_module)
 		for obj in export_list:
 			name = obj.__name__
 			if isinstance(obj, FunctionType):
@@ -133,7 +133,7 @@ class Interpreter:
 		return self._find_in_env(env, expr)
 
 	def eval_NullLiteral(self, expr: NullLiteral, env: Environment) -> Any:
-		return core.Null()
+		return Null()
 
 	def _create_arg(self, name: str, arg_type_expr: Expr, env: Environment) -> Argument:
 		arg_type = self.eval_in_env(arg_type_expr, env)

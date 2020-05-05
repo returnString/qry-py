@@ -1,0 +1,3 @@
+
+class QryRuntimeError(Exception):
+	pass

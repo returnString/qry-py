@@ -1,32 +1,9 @@
 from dataclasses import dataclass
 from typing import Union, Callable, Any
 
-from qry.environment import Environment
-from qry.stdlib.export import export
-
-@export
-@dataclass
-class Int:
-	val: int
-
-@export
-@dataclass
-class Float:
-	val: float
-
-@export
-@dataclass
-class String:
-	val: str
-
-@export
-@dataclass
-class Bool:
-	val: bool
-
-@export
-class Null:
-	pass
+from qry.lang import Int, Float, String, Bool
+from qry.runtime import Environment
+from qry.common import export
 
 _attach_hook: Callable[..., None]
 

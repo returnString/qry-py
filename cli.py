@@ -1,7 +1,7 @@
 from cmd import Cmd
 import builtins
 
-from qry.parser import Parser
+from qry.lang import Parser
 from qry.interpreter import Interpreter
 from qry.runtime import QryRuntimeError
 from qry.stdlib.ops import print

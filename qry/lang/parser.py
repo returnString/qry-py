@@ -4,8 +4,8 @@ import sys
 
 from lark import Lark, Transformer, v_args
 
+from .coretypes import String, Int, Float, Bool
 from .syntax import *
-from .stdlib.core import String, Int, Float, Bool
 
 def _passthrough() -> Any:
 	return lambda self, children, meta: children

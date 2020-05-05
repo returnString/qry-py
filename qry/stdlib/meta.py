@@ -1,10 +1,10 @@
 from typing import Any, Callable
 from dataclasses import dataclass
 
-from ..environment import Environment
-from ..syntax import Expr
+from qry.common import export
+from qry.runtime import Environment
+from qry.lang import Expr
 
-from .export import export
 from .ops import to_string
 
 @export

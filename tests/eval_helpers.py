@@ -2,7 +2,7 @@ from typing import Any, List, Tuple, Optional, Callable
 
 import pytest
 
-from qry.parser import Parser
+from qry.lang import Parser
 from qry.interpreter import Interpreter
 from qry.runtime import to_py, QryRuntimeError
 

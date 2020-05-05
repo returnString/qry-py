@@ -2,10 +2,9 @@ from typing import Any, Callable
 import operator
 import builtins
 
-from .core import String, Int, Float, Bool
-from .export import export
-from ..environment import Environment
-from ..runtime import method, from_py, FunctionBase, Function, BuiltinFunction, Method, Library, TypeParam
+from qry.lang import String, Int, Float, Bool
+from qry.common import export
+from qry.runtime import method, from_py, FunctionBase, Function, BuiltinFunction, Method, Library, TypeParam, Environment
 
 @method
 def add(a: Any, b: Any) -> Any:

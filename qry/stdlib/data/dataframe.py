@@ -4,7 +4,7 @@ from typing import cast
 import pyarrow
 from pyarrow import csv
 
-from qry.stdlib.export import export
+from qry.common import export
 from qry.stdlib.ops import to_string, num_cols, num_rows
 
 @export

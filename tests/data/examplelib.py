@@ -1,7 +1,7 @@
 from typing import Any
 
-from qry.stdlib.core import String, Int
-from qry.stdlib.export import export
+from qry.common import export
+from qry.lang import String, Int
 from qry.runtime import method, TypeParam
 
 @export
