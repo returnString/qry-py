@@ -130,9 +130,7 @@ class Method:
 
 		return wrapper
 
-	_no_default = object()
-
-	def call(self, *args: Any, type_params: List[type] = [], default: Any = _no_default) -> Any:
+	def call(self, *args: Any, type_params: List[type] = []) -> Any:
 		sig = _method_sig((type_params + [type(a) for a in args]))
 		func = self.funcs.get(sig, self.default_func)
 
@@ -143,8 +141,6 @@ class Method:
 			ret = func.func(*args)
 
 		if ret == NotImplemented:
-			if default != self._no_default:
-				return default
 			raise QryRuntimeError(f'unimplemented method "{func.func.__name__}" for signature: {sig}')
 
 		return ret

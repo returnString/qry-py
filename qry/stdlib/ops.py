@@ -99,13 +99,13 @@ not_equal(binop(Bool, Bool, operator.ne))
 
 @export
 @method
-def to_string(obj: Any) -> Any:
-	return NotImplemented
+def to_string(obj: Any) -> str:
+	return f'<object: {type(obj).__name__}>'
 
 @export
 @method
 def print(obj: Any) -> None:
-	builtins.print(to_string.call(obj, default = ''))
+	builtins.print(to_string.call(obj))
 
 @to_string
 def int_to_string(obj: Int) -> str:
