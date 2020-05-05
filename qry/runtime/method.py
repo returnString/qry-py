@@ -1,5 +1,8 @@
 from typing import List, Any, Dict, Callable
 from dataclasses import dataclass, field
+from inspect import getmodule
+
+from qry.common import set_original_module
 
 from .function import BuiltinFunction
 from .error import QryRuntimeError
@@ -46,4 +49,5 @@ class Method:
 def method(ref_func: Callable[..., Any]) -> Method:
 	meth = Method(ref_func.__name__, BuiltinFunction.from_func(ref_func))
 	setattr(meth, '__name__', ref_func.__name__)
+	set_original_module(meth, getmodule(ref_func))
 	return meth

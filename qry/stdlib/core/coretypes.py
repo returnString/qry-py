@@ -1,7 +1,5 @@
-from dataclasses import dataclass
-from typing import Union, Callable, Any
+from typing import Callable, Any
 
-from qry.lang import Int, Float, String, Bool
 from qry.runtime import Environment
 from qry.common import export
 

@@ -5,6 +5,7 @@ import copy
 from qry.common import get_all_exported_objs
 from qry.stdlib import core, ops, meta, data
 from qry.lang import *
+from qry.lang import coretypes
 
 from qry.runtime import Environment, QryRuntimeError, Library, to_py, from_py
 from qry.runtime import Method, Function, BuiltinFunction, Argument, ArgumentMode
@@ -35,6 +36,7 @@ class Interpreter:
 		self.root_env = Environment('root', dict())
 		self.global_env = self.root_env.child_env('global')
 		core.init(self.attach_library)
+		self.load_library(coretypes, True)
 		self.load_library(core, True)
 		self.load_library(ops, True)
 		meta.init(self.eval_in_env)
