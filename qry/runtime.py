@@ -115,28 +115,28 @@ class Method:
 	default_func: BuiltinFunction
 	funcs: Dict[str, BuiltinFunction] = field(default_factory = dict)
 
-	def _register(self, impl_func: Callable[..., Any], *types: type) -> Callable[..., Any]:
+	def _register(self, impl_func: Callable[..., Any], type_params: List[type]) -> Callable[..., Any]:
 		func_obj = BuiltinFunction.from_func(impl_func)
-		args = list(types) + [a.type for a in func_obj.args]
+		args = type_params + [a.type for a in func_obj.args]
 		self.funcs[_method_sig(args)] = func_obj
 		return impl_func
 
 	def __call__(self, impl_func: Callable[..., Any]) -> Callable[..., Any]:
-		return self._register(impl_func)
+		return self._register(impl_func, [])
 
-	def generic(self, *types: type) -> Callable[..., Any]:
+	def generic(self, *type_params: type) -> Callable[..., Any]:
 		def wrapper(impl_func: Callable[..., Any]) -> Callable[..., Any]:
-			return self._register(impl_func, *types)
+			return self._register(impl_func, list(type_params))
 
 		return wrapper
 
-	def call(self, *args: Any, type_params: List[type] = []) -> Any:
+	def call(self, args: List[Any], type_params: List[type] = []) -> Any:
 		sig = _method_sig((type_params + [type(a) for a in args]))
 		func = self.funcs.get(sig, self.default_func)
 
 		# supply unhandled types as actual args for fallback generic dispatch
 		if func == self.default_func and len(type_params):
-			ret = func.func(*(type_params + list(args)))
+			ret = func.func(*(type_params + args))
 		else:
 			ret = func.func(*args)
 

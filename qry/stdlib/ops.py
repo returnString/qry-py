@@ -105,7 +105,7 @@ def to_string(obj: Any) -> str:
 @export
 @method
 def print(obj: Any) -> None:
-	builtins.print(to_string.call(obj))
+	builtins.print(to_string.call([obj]))
 
 @to_string
 def int_to_string(obj: Int) -> str:
