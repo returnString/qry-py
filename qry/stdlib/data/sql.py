@@ -121,10 +121,21 @@ class Aggregate:
 		select_expr = ', '.join(self.by.names + select_computed)
 		return f'select {select_expr} from {render_subquery(source, state)} group by {grouping_expr}'
 
+@dataclass
+class Select:
+	selection: List[str]
+	computed: Dict[str, str]
+
+	def render(self, source: str, state: RenderState) -> str:
+		select_computed = [f'{c} as {name}' for name, c in self.computed.items()]
+		select_expr = ', '.join(self.selection + select_computed)
+		return f'select {select_expr} from {render_subquery(source, state)}'
+
 _sql_binop_translation = {
-	BinaryOp.NOT_EQUAL: "<>",
-	BinaryOp.AND: "and",
-	BinaryOp.OR: "or",
+	BinaryOp.EQUAL: '=',
+	BinaryOp.NOT_EQUAL: '<>',
+	BinaryOp.AND: 'and',
+	BinaryOp.OR: 'or',
 }
 
 def sql_interpret_value(value: Any) -> str:
@@ -184,3 +195,11 @@ def aggregate(_env: Environment, query: QueryPipeline, by: Grouping, **computati
 @export
 def cross_join(query: QueryPipeline, rhs: QueryPipeline) -> QueryPipeline:
 	return query.chain(Join(JoinType.CROSS, rhs))
+
+@export
+def mutate(_env: Environment, query: QueryPipeline, **computation: Expr) -> QueryPipeline:
+	return query.chain(Select([], {name: sql_interpret(_env, c) for name, c in computation.items()}))
+
+@export
+def select(_env: Environment, query: QueryPipeline, *columns: Expr) -> QueryPipeline:
+	return query.chain(Select([sql_interpret(_env, c) for c in columns], {}))

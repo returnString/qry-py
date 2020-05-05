@@ -46,6 +46,25 @@ data_exprs = [
 		|> collect()
 		|> num_rows()
 	''', 1),
+	(f'''
+	get_table(conn, "{table_name('my_table')}")
+		|> mutate(next_year = age + 1)
+		|> filter(next_year == 27)
+		|> collect()
+		|> num_rows()
+	''', 1),
+	(f'''
+	get_table(conn, "{table_name('my_table')}")
+		|> select(name)
+		|> collect()
+		|> num_cols()
+	''', 1),
+	(f'''
+	get_table(conn, "{table_name('my_table')}")
+		|> select(name, age)
+		|> collect()
+		|> num_cols()
+	''', 2),
 ]
 
 def data_test(connect_code: str) -> Any:
