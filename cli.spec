@@ -11,6 +11,7 @@ a = Analysis(
 	('qry/grammar.lark', 'qry'),
 	(Path(lark.__file__).parent / 'grammars', 'lark/grammars'),
 	],
+	hiddenimports = ['pkg_resources.py2_warn'],
 )
 
 pyz = PYZ(a.pure, a.zipped_data)
