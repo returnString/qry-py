@@ -1,3 +1,4 @@
 lark-parser==0.8
 psycopg2==2.8.4
+mysqlclient==1.4.6
 pyarrow==0.17

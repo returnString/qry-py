@@ -81,3 +81,4 @@ test_sqlite = data_test('conn <- connect_sqlite("tests/artefacts/db.sqlite")')
 
 if not os.getenv('QRY_CI_NODOCKER'):
 	test_postgres = data_test('conn <- connect_postgres("localhost", 54321, "qrytest", "qry", "password")')
+	test_mysql = data_test('conn <- connect_mysql("localhost", 33060, "qrytest", "qry", "password")')
