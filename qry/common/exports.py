@@ -1,4 +1,4 @@
-from typing import Any, List, Optional, cast
+from typing import Any, List, Optional, Tuple, Set, cast
 from types import ModuleType
 from inspect import getmodule
 
@@ -18,12 +18,15 @@ def set_original_module(obj: Any, source_module: Optional[ModuleType]) -> None:
 def get_original_module(obj: Any) -> Optional[ModuleType]:
 	return cast(ModuleType, getattr(obj, _original_module_attr, getmodule(obj)))
 
-def get_all_exported_objs(module: ModuleType) -> List[Any]:
-	ret = []
+def get_all_exported_objs(module: ModuleType) -> Tuple[List[Any], Set[ModuleType]]:
+	objects = []
+	modules = set()
 	for name in dir(module):
 		obj = getattr(module, name)
 		original_obj_module = get_original_module(obj)
 
 		if is_exported(obj) and original_obj_module and original_obj_module.__name__.startswith(module.__name__):
-			ret.append(obj)
-	return ret
+			objects.append(obj)
+			modules.add(original_obj_module)
+
+	return objects, modules

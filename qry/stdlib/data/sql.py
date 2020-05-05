@@ -7,10 +7,11 @@ import pyarrow
 
 from qry.common import export
 from qry.lang import *
-from qry.runtime import Environment, QryRuntimeError
-from qry.stdlib import meta
+from qry.runtime import Environment, QryRuntimeError, InterpreterHooks
 
 from .dataframe import DataFrame
+
+qry_hooks: InterpreterHooks
 
 class DBCursor(Protocol):
 	def execute(self, sql: str, parameters: Iterable[Any] = ...) -> 'DBCursor':
@@ -161,7 +162,7 @@ def sql_interpret(env: Environment, expr: Expr, constrain_to: Union[type, Tuple[
 	elif isinstance(expr, (StringLiteral, IntLiteral, FloatLiteral, BoolLiteral)):
 		return sql_interpret_value(expr.value)
 	elif isinstance(expr, InterpolateExpr):
-		return sql_interpret_value(meta.eval_in_env(expr, env))
+		return sql_interpret_value(qry_hooks.eval_in_env(expr, env))
 
 	raise Exception(f'unhandled expr for sql: {expr}')
 

@@ -35,11 +35,9 @@ class Interpreter:
 	def __init__(self) -> None:
 		self.root_env = Environment('root', dict())
 		self.global_env = self.root_env.child_env('global')
-		core.init(self.attach_library)
 		self.load_library(coretypes, True)
 		self.load_library(core, True)
 		self.load_library(ops, True)
-		meta.init(self.eval_in_env)
 		self.load_library(meta, False)
 		self.load_library(data, False)
 
@@ -55,14 +53,18 @@ class Interpreter:
 	def load_library(self, lib_module: ModuleType, attach_global: bool) -> None:
 		lib_name = self._get_lib_name(lib_module)
 
+
 		lib_state = {}
-		export_list = get_all_exported_objs(lib_module)
+		export_list, modules = get_all_exported_objs(lib_module)
 		for obj in export_list:
 			name = obj.__name__
 			if isinstance(obj, FunctionType):
 				obj = BuiltinFunction.from_func(obj)
 
 			lib_state[name] = obj
+
+		for module in modules:
+			setattr(module, 'qry_hooks', self)
 
 		lib_env = self.root_env.child_env(lib_name)
 		lib_env.state.update(lib_state)
