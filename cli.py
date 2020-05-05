@@ -17,7 +17,7 @@ class QryCmd(Cmd):
 			for expr in parser.parse(line):
 				val = interpreter.eval(expr)
 				builtins.print(f'({type(val).__name__}) ', end = '')
-				print.call(val)
+				print.call([val])
 		except QryRuntimeError as err:
 			builtins.print(err)
 
