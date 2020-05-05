@@ -1,4 +1,4 @@
-from typing import Optional, Iterable, Any, List, Dict
+from typing import Optional, Iterable, Any, List, Dict, Tuple, Union
 from typing_extensions import Protocol
 from dataclasses import dataclass
 from enum import Enum
@@ -7,7 +7,7 @@ import pyarrow
 
 from qry.common import export
 from qry.lang import *
-from qry.runtime import Environment
+from qry.runtime import Environment, QryRuntimeError
 from qry.stdlib import meta
 
 from .dataframe import DataFrame
@@ -146,7 +146,10 @@ def sql_interpret_value(value: Any) -> str:
 
 	raise Exception(f'unhandled value for sql: {value}')
 
-def sql_interpret(env: Environment, expr: Expr) -> str:
+def sql_interpret(env: Environment, expr: Expr, constrain_to: Union[type, Tuple[type, ...]] = (Expr, )) -> str:
+	if not isinstance(expr, constrain_to):
+		raise QryRuntimeError(f'expected expr of type: {constrain_to}')
+
 	if isinstance(expr, BinaryOpExpr):
 		op = _sql_binop_translation.get(expr.op, expr.op.value)
 		return f'{sql_interpret(env, expr.lhs)} {op} {sql_interpret(env, expr.rhs)}'
@@ -183,7 +186,7 @@ def collect(query: QueryPipeline) -> DataFrame:
 @export
 def group(_env: Environment, *by: Expr, **named_by: Expr) -> Grouping:
 	return Grouping(
-		[sql_interpret(_env, expr) for expr in by],
+		[sql_interpret(_env, expr, constrain_to = IdentExpr) for expr in by],
 		{name: sql_interpret(_env, expr)
 		for name, expr in named_by.items()},
 	)
@@ -202,4 +205,4 @@ def mutate(_env: Environment, query: QueryPipeline, **computation: Expr) -> Quer
 
 @export
 def select(_env: Environment, query: QueryPipeline, *columns: Expr) -> QueryPipeline:
-	return query.chain(Select([sql_interpret(_env, c) for c in columns], {}))
+	return query.chain(Select([sql_interpret(_env, c, constrain_to = IdentExpr) for c in columns], {}))

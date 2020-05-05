@@ -2,6 +2,8 @@ from uuid import uuid4
 import os
 from typing import Any, List, Tuple, Optional
 
+from qry.runtime import QryRuntimeError
+
 from ..eval_helpers import data_driven_test
 
 run_id = str(uuid4()).replace('-', '')
@@ -65,6 +67,10 @@ data_exprs = [
 		|> collect()
 		|> num_cols()
 	''', 2),
+	(f'''
+	get_table(conn, "{table_name('my_table')}")
+		|> select(1 + 1)
+	''', QryRuntimeError('expected expr of type:')),
 ]
 
 def data_test(connect_code: str) -> Any:
