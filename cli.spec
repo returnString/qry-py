@@ -8,7 +8,7 @@ import lark
 a = Analysis(
 	['cli.py'],
 	datas = [
-	('qry/grammar.lark', 'qry'),
+	('qry/lang/grammar.lark', 'qry/lang'),
 	(Path(lark.__file__).parent / 'grammars', 'lark/grammars'),
 	],
 	hiddenimports = ['pkg_resources.py2_warn'],

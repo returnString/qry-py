@@ -110,7 +110,7 @@ def _get_data_file(file: str) -> Path:
 	return base_path / Path(file)
 
 lark_parser = Lark.open(
-	_get_data_file('qry/grammar.lark'),
+	_get_data_file('qry/lang/grammar.lark'),
 	parser = 'lalr',
 	propagate_positions = True,
 	debug = True,
