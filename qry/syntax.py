@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 from .stdlib.core import Int, Float, String, Bool, Null
 
@@ -123,6 +123,7 @@ class NullLiteral(Expr):
 
 @dataclass
 class FuncExpr(Expr):
+	name: Optional[str]
 	args: Dict[str, Expr]
 	body: List[Expr]
 

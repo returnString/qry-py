@@ -28,7 +28,7 @@ args_def: arg_def? ("," arg_def)* ","?
 	| IDENT "=" expr -> named_provided_arg
 call_arglist: "(" provided_arg? ("," provided_arg)* ")"
 block_expr: "{" expr* "}"
-func_expr: "fn" "(" args_def ")" block_expr
+func_expr: "fn" IDENT? "(" args_def ")" block_expr
 interpolate_expr: "{{" expr "}}"
 
 RASSIGN_OP.2: "->"

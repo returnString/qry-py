@@ -77,6 +77,15 @@ expressions_with_final_state = [
 	''', {
 	'x': 103
 	}),
+	('''
+	fn named_add(x: Int, y: Int) {
+		x + y
+	}
+
+	x <- named_add(1, 2)
+	''', {
+	'x': 3
+	}),
 ]
 
 test_expression_results = data_driven_test(expressions_with_results)

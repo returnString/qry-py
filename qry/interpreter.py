@@ -141,7 +141,10 @@ class Interpreter:
 
 	def eval_FuncExpr(self, expr: FuncExpr, env: Environment) -> Any:
 		args = [self._create_arg(name, type, env) for name, type in expr.args.items()]
-		return Function(args, expr.body, env.child_env('func_closure'))
+		ret = Function(args, expr.body, env.child_env('func_closure'))
+		if expr.name is not None:
+			env.state[expr.name] = ret
+		return ret
 
 	def eval_CallExpr(self, expr: CallExpr, env: Environment) -> Any:
 		target = self.eval_in_env(expr.func, env)
