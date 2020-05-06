@@ -1,6 +1,6 @@
 from typing import Optional, Iterable, Any, List, Dict, Tuple, Union
 from typing_extensions import Protocol
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 import pyarrow
@@ -33,7 +33,12 @@ class Connection:
 	c: DBConn
 
 @dataclass
+class ColumnMetadata:
+	type: str
+
+@dataclass
 class RenderState:
+	columns: Dict[str, ColumnMetadata] = field(default_factory = dict)
 	alias_counter: int = 0
 
 class QueryStep(Protocol):
@@ -44,16 +49,15 @@ class QueryStep(Protocol):
 @dataclass
 class QueryPipeline:
 	cursor: DBCursor
-	source_table: str
 	steps: List[QueryStep]
 
 	def chain(self, step: QueryStep) -> 'QueryPipeline':
 		steps = self.steps.copy()
 		steps.append(step)
-		return QueryPipeline(self.cursor, self.source_table, steps)
+		return QueryPipeline(self.cursor, steps)
 
 	def render(self, state: RenderState) -> str:
-		query = f'select * from {self.source_table}'
+		query = ''
 		for step in self.steps:
 			query = step.render(query, state)
 		return query
@@ -137,6 +141,15 @@ class Select:
 		select_expr = ', '.join(names + select_computed)
 		return f'select {select_expr} from {render_subquery(source, state)}'
 
+@dataclass
+class From:
+	table: str
+	columns: Dict[str, ColumnMetadata]
+
+	def render(self, source: str, state: RenderState) -> str:
+		state.columns.update(self.columns)
+		return f'select * from {self.table}'
+
 _sql_binop_translation = {
 	BinaryOp.EQUAL: '=',
 	BinaryOp.NOT_EQUAL: '<>',
@@ -179,7 +192,14 @@ def execute(conn: Connection, sql: str) -> int:
 
 @export
 def get_table(conn: Connection, table: str) -> QueryPipeline:
-	return QueryPipeline(conn.c.cursor(), table, [])
+	cursor = conn.c.cursor()
+
+	# FIXME: injection
+	cursor.execute(f'select * from {table} where false')
+	cursor.fetchall()
+	column_metadata = {desc[0]: ColumnMetadata(desc[1]) for desc in cursor.description}
+
+	return QueryPipeline(cursor, [From(table, column_metadata)])
 
 @export
 def filter(_env: Environment, query: QueryPipeline, expr: Expr) -> QueryPipeline:
