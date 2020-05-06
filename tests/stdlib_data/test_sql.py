@@ -70,6 +70,7 @@ data_exprs = [
 	(f'''
 	get_table(conn, "{table_name('my_table')}")
 		|> select(1 + 1)
+		|> collect()
 	''', QryRuntimeError('expected expr of type:')),
 ]
 

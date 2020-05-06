@@ -79,11 +79,11 @@ def render_subquery(source: str, state: RenderState) -> str:
 
 @dataclass
 class Filter:
-	exprs: List[str]
+	env: Environment
+	expr: Expr
 
 	def render(self, source: str, state: RenderState) -> str:
-		cond = ' and '.join(self.exprs)
-		return f'select * from {render_subquery(source, state)} where {cond}'
+		return f'select * from {render_subquery(source, state)} where {sql_interpret(self.env, self.expr)}'
 
 @dataclass
 class Count:
@@ -105,31 +105,36 @@ class Join:
 @export
 @dataclass
 class Grouping:
-	names: List[str]
-	computed: Dict[str, str]
+	env: Environment
+	names: List[Expr]
+	computed: Dict[str, Expr]
 
 @dataclass
 class Aggregate:
+	env: Environment
 	by: Grouping
-	aggregations: Dict[str, str]
+	aggregations: Dict[str, Expr]
 
 	def render(self, source: str, state: RenderState) -> str:
-		grouping_expr = ', '.join(self.by.names + list(self.by.computed.keys()))
+		names = [sql_interpret(self.by.env, e, constrain_to = IdentExpr) for e in self.by.names]
+		grouping_expr = ', '.join(names + list(self.by.computed.keys()))
 
 		all_computations = {**self.by.computed, **self.aggregations}
-		select_computed = [f'{c} as {name}' for name, c in all_computations.items()]
+		select_computed = [f'{sql_interpret(self.env, c)} as {name}' for name, c in all_computations.items()]
 
-		select_expr = ', '.join(self.by.names + select_computed)
+		select_expr = ', '.join(names + select_computed)
 		return f'select {select_expr} from {render_subquery(source, state)} group by {grouping_expr}'
 
 @dataclass
 class Select:
-	selection: List[str]
-	computed: Dict[str, str]
+	env: Environment
+	selection: List[Expr]
+	computed: Dict[str, Expr]
 
 	def render(self, source: str, state: RenderState) -> str:
-		select_computed = [f'{c} as {name}' for name, c in self.computed.items()]
-		select_expr = ', '.join(self.selection + select_computed)
+		names = [sql_interpret(self.env, e, constrain_to = IdentExpr) for e in self.selection]
+		select_computed = [f'{sql_interpret(self.env, c)} as {name}' for name, c in self.computed.items()]
+		select_expr = ', '.join(names + select_computed)
 		return f'select {select_expr} from {render_subquery(source, state)}'
 
 _sql_binop_translation = {
@@ -178,7 +183,7 @@ def get_table(conn: Connection, table: str) -> QueryPipeline:
 
 @export
 def filter(_env: Environment, query: QueryPipeline, expr: Expr) -> QueryPipeline:
-	return query.chain(Filter([sql_interpret(_env, expr)]))
+	return query.chain(Filter(_env, expr))
 
 @export
 def collect(query: QueryPipeline) -> DataFrame:
@@ -186,15 +191,11 @@ def collect(query: QueryPipeline) -> DataFrame:
 
 @export
 def group(_env: Environment, *by: Expr, **named_by: Expr) -> Grouping:
-	return Grouping(
-		[sql_interpret(_env, expr, constrain_to = IdentExpr) for expr in by],
-		{name: sql_interpret(_env, expr)
-		for name, expr in named_by.items()},
-	)
+	return Grouping(_env, list(by), named_by)
 
 @export
 def aggregate(_env: Environment, query: QueryPipeline, by: Grouping, **computation: Expr) -> QueryPipeline:
-	return query.chain(Aggregate(by, {name: sql_interpret(_env, c) for name, c in computation.items()}))
+	return query.chain(Aggregate(_env, by, computation))
 
 @export
 def cross_join(query: QueryPipeline, rhs: QueryPipeline) -> QueryPipeline:
@@ -202,8 +203,8 @@ def cross_join(query: QueryPipeline, rhs: QueryPipeline) -> QueryPipeline:
 
 @export
 def mutate(_env: Environment, query: QueryPipeline, **computation: Expr) -> QueryPipeline:
-	return query.chain(Select([], {name: sql_interpret(_env, c) for name, c in computation.items()}))
+	return query.chain(Select(_env, [], computation))
 
 @export
 def select(_env: Environment, query: QueryPipeline, *columns: Expr) -> QueryPipeline:
-	return query.chain(Select([sql_interpret(_env, c, constrain_to = IdentExpr) for c in columns], {}))
+	return query.chain(Select(_env, list(columns), {}))
