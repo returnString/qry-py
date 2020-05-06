@@ -1,7 +1,7 @@
-from typing import Optional, Iterable, Any, List, Dict, Tuple, Union
+from typing import Optional, Iterable, Any, List, Dict, Tuple, Union, Callable
 from typing_extensions import Protocol
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import Enum, auto
 
 import pyarrow
 
@@ -27,14 +27,26 @@ class DBConn(Protocol):
 	def cursor(self, cursorClass: Optional[type] = ...) -> DBCursor:
 		...
 
+class DBType(Enum):
+	STRING = auto()
+	INT = auto()
+	FLOAT = auto()
+
 @export
 @dataclass
 class Connection:
 	c: DBConn
+	map_typecode: Callable[[Any], Optional[DBType]]
+
+	def get_type(self, typecode: Any) -> DBType:
+		ret = self.map_typecode(typecode) # type: ignore
+		if not ret:
+			raise QryRuntimeError(f'unhandled typecode: {typecode}')
+		return ret
 
 @dataclass
 class ColumnMetadata:
-	type: str
+	type: DBType
 
 @dataclass
 class RenderState:
@@ -197,7 +209,7 @@ def get_table(conn: Connection, table: str) -> QueryPipeline:
 	# FIXME: injection
 	cursor.execute(f'select * from {table} where false')
 	cursor.fetchall()
-	column_metadata = {desc[0]: ColumnMetadata(desc[1]) for desc in cursor.description}
+	column_metadata = {desc[0]: ColumnMetadata(conn.get_type(desc[1])) for desc in cursor.description}
 
 	return QueryPipeline(cursor, [From(table, column_metadata)])
 

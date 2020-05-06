@@ -13,7 +13,7 @@ def table_name(name: str) -> str:
 
 data_exprs = [
 	(f'''
-	execute(conn, "create table {table_name('my_table')} (name text, age integer)")
+	execute(conn, "create table {table_name('my_table')} (name varchar(255), age integer)")
 	execute(conn, "insert into {table_name('my_table')}(name, age) values ('ruan', 26), ('ruanlater', 27), ('thirdperson', 27)")
 	''', 3),
 	(f'''
