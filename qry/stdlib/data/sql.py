@@ -207,7 +207,7 @@ def get_table(conn: Connection, table: str) -> QueryPipeline:
 	cursor = conn.c.cursor()
 
 	# FIXME: injection
-	cursor.execute(f'select * from {table} where false')
+	cursor.execute(f'select * from {table} where 0=1')
 	cursor.fetchall()
 	column_metadata = {desc[0]: ColumnMetadata(conn.get_type(desc[1])) for desc in cursor.description}
 
