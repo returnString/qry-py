@@ -5,6 +5,7 @@ from enum import Enum, auto
 
 from qry.lang import Expr
 
+from .runtime import py_to_qry_type, qry_to_py_type
 from .environment import Environment
 
 class TypeParam:
@@ -33,13 +34,6 @@ class Function(FunctionBase):
 	body: List[Expr]
 	environment: Environment
 
-_builtin_arg_types_to_convert = {
-	str,
-	bool,
-	int,
-	float,
-}
-
 def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 	annotated_type = arg_spec.annotations[name]
 	if arg_spec.varargs == name:
@@ -51,13 +45,14 @@ def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 	else:
 		mode = ArgumentMode.STANDARD
 
-	return Argument(name, annotated_type, annotated_type is not Expr, mode,
-		annotated_type in _builtin_arg_types_to_convert)
+	qry_type = py_to_qry_type(annotated_type)
+	return Argument(name, qry_type, qry_type is not Expr, mode, qry_type != annotated_type)
 
 @dataclass
 class BuiltinFunction(FunctionBase):
 	func: Callable[..., Any]
 	implicit_caller_env: bool
+	return_type: type
 
 	@classmethod
 	def from_func(cls, func: Callable[..., Any]) -> 'BuiltinFunction':
@@ -72,5 +67,12 @@ class BuiltinFunction(FunctionBase):
 		if implicit_caller_env:
 			arg_names = arg_names[1:]
 
+		return_type = py_to_qry_type(arg_spec.annotations['return'])
+
 		args = [_py_arg(arg_spec, a) for a in arg_names]
-		return cls(args, func, implicit_caller_env)
+		return cls(
+			args,
+			func,
+			implicit_caller_env,
+			return_type,
+		)

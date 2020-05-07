@@ -4,6 +4,7 @@ from inspect import getmodule
 
 from qry.common import set_original_module
 
+from .runtime import py_to_qry_type
 from .function import BuiltinFunction
 from .error import QryRuntimeError
 
@@ -32,7 +33,7 @@ class Method:
 		return wrapper
 
 	def call(self, args: List[Any], type_params: List[type] = []) -> Any:
-		sig = _method_sig((type_params + [type(a) for a in args]))
+		sig = _method_sig((type_params + [py_to_qry_type(type(a)) for a in args]))
 		func = self.funcs.get(sig, self.default_func)
 
 		# supply unhandled types as actual args for fallback generic dispatch
