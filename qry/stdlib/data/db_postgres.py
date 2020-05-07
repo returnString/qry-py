@@ -1,10 +1,8 @@
-from typing import Any, Optional
-
 import psycopg2
 
 from qry.common import export
 
-from .sql import Connection, DBType
+from .sql import Connection, DBType, metadata_from_typecode_lookup
 
 _oid_map = {
 	# ints
@@ -18,9 +16,6 @@ _oid_map = {
 	1043: DBType.STRING, # varchar
 }
 
-def postgres_typecode(typecode: Any) -> Optional[DBType]:
-	return _oid_map.get(typecode)
-
 @export
 def connect_postgres(host: str, port: int, database: str, user: str, password: str) -> Connection:
 	conn = Connection(psycopg2.connect(
@@ -29,7 +24,7 @@ def connect_postgres(host: str, port: int, database: str, user: str, password: s
 		dbname = database,
 		user = user,
 		password = password,
-	), postgres_typecode)
+	), metadata_from_typecode_lookup(_oid_map))
 
 	conn.c.autocommit = True # type: ignore
 	return conn

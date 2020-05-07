@@ -1,11 +1,9 @@
-from typing import Any, Optional
-
 import MySQLdb
 from MySQLdb import FIELD_TYPE
 
 from qry.common import export
 
-from .sql import Connection, DBType
+from .sql import Connection, DBType, metadata_from_typecode_lookup
 
 _typecode_map = {
 	FIELD_TYPE.VAR_STRING: DBType.STRING,
@@ -15,9 +13,6 @@ _typecode_map = {
 	FIELD_TYPE.LONG: DBType.INT,
 }
 
-def mysql_typecode(typecode: Any) -> Optional[DBType]:
-	return _typecode_map.get(typecode)
-
 @export
 def connect_mysql(host: str, port: int, database: str, user: str, password: str) -> Connection:
 	conn = Connection(MySQLdb.connect(
@@ -26,7 +21,7 @@ def connect_mysql(host: str, port: int, database: str, user: str, password: str)
 		db = database,
 		user = user,
 		passwd = password,
-	), mysql_typecode)
+	), metadata_from_typecode_lookup(_typecode_map))
 
 	conn.c.autocommit(True) # type: ignore
 	return conn

@@ -32,21 +32,31 @@ class DBType(Enum):
 	INT = auto()
 	FLOAT = auto()
 
-@export
-@dataclass
-class Connection:
-	c: DBConn
-	map_typecode: Callable[[Any], Optional[DBType]]
-
-	def get_type(self, typecode: Any) -> DBType:
-		ret = self.map_typecode(typecode) # type: ignore
+def metadata_from_typecode_lookup(types: Dict[Any, DBType]) -> Any:
+	def _get_type(typecode: Any) -> DBType:
+		ret = types.get(typecode)
 		if not ret:
 			raise QryRuntimeError(f'unhandled typecode: {typecode}')
 		return ret
 
+	def _get_table_metadata(conn: Connection, table: str) -> Dict[str, ColumnMetadata]:
+		# FIXME: injection
+		cursor = conn.c.cursor()
+		cursor.execute(f'select * from {table} limit 0')
+		cursor.fetchall()
+		return {desc[0]: ColumnMetadata(_get_type(desc[1])) for desc in cursor.description}
+
+	return _get_table_metadata
+
 @dataclass
 class ColumnMetadata:
 	type: DBType
+
+@export
+@dataclass
+class Connection:
+	c: DBConn
+	get_table_metadata: Callable[['Connection', str], Dict[str, ColumnMetadata]]
 
 @dataclass
 class RenderState:
@@ -206,12 +216,9 @@ def execute(conn: Connection, sql: str) -> int:
 def get_table(conn: Connection, table: str) -> QueryPipeline:
 	cursor = conn.c.cursor()
 
-	# FIXME: injection
-	cursor.execute(f'select * from {table} where 0=1')
-	cursor.fetchall()
-	column_metadata = {desc[0]: ColumnMetadata(conn.get_type(desc[1])) for desc in cursor.description}
-
-	return QueryPipeline(cursor, [From(table, column_metadata)])
+	metadata_func = conn.get_table_metadata
+	metadata = metadata_func(conn, table) # type: ignore
+	return QueryPipeline(cursor, [From(table, metadata)])
 
 @export
 def filter(_env: Environment, query: QueryPipeline, expr: Expr) -> QueryPipeline:
