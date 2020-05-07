@@ -9,6 +9,9 @@ from .function import BuiltinFunction
 from .error import QryRuntimeError
 
 def _method_sig(types: List[type]) -> str:
+	if Any in types:
+		raise QryRuntimeError(f'tried to create a method signature including {Any}')
+
 	return '|'.join([t.__name__ for t in types])
 
 @dataclass
@@ -33,7 +36,7 @@ class Method:
 		return wrapper
 
 	def resolve(self, arg_types: List[type], type_params: List[type] = []) -> Tuple[str, BuiltinFunction]:
-		sig = _method_sig((type_params + [py_to_qry_type(a) for a in arg_types]))
+		sig = _method_sig(type_params + [py_to_qry_type(a) for a in arg_types])
 		return sig, self.funcs.get(sig, self.default_func)
 
 	def call(self, args: List[Any], type_params: List[type] = []) -> Any:
