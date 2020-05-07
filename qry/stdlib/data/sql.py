@@ -53,12 +53,27 @@ class Connection:
 	get_table_metadata: Callable[['Connection', str], Dict[str, ColumnMetadata]]
 
 @dataclass
+class RenderStateCounter:
+	_alias: int
+
+@dataclass
 class RenderState:
-	columns: Dict[str, ColumnMetadata] = field(default_factory = dict)
-	alias_counter: int = 0
+	query: str
+	columns: Dict[str, ColumnMetadata]
+	counter: RenderStateCounter
+
+	def substate(self) -> 'RenderState':
+		return RenderState('', {}, self.counter)
+
+	def copy(self, new_query: str, columns: Dict[str, ColumnMetadata]) -> 'RenderState':
+		return RenderState(new_query, columns, self.counter)
+
+	def subquery(self) -> str:
+		self.counter._alias += 1
+		return f'({self.query}) qry_{self.counter._alias}'
 
 class QueryStep(Protocol):
-	def render(self, prev: str, state: RenderState) -> str:
+	def render(self, state: RenderState) -> RenderState:
 		...
 
 @export
@@ -72,15 +87,15 @@ class QueryPipeline:
 		steps.append(step)
 		return QueryPipeline(self.cursor, steps)
 
-	def render(self, state: RenderState) -> str:
-		query = ''
+	def render(self, parent_state: RenderState) -> RenderState:
+		state = parent_state.substate()
 		for step in self.steps:
-			query = step.render(query, state)
-		return query
+			state = step.render(state)
+		return state
 
 	def execute(self) -> DataFrame:
-		state = RenderState()
-		self.cursor.execute(self.render(state))
+		state = self.render(RenderState('', {}, RenderStateCounter(0)))
+		self.cursor.execute(state.query)
 		column_names = [desc[0] for desc in self.cursor.description]
 		rows = self.cursor.fetchall()
 		column_data: List[Any] = [[] for c in column_names]
@@ -93,22 +108,18 @@ class QueryPipeline:
 		table = pyarrow.Table.from_arrays([pyarrow.array(a) for a in column_data], column_names)
 		return DataFrame(table)
 
-def render_subquery(source: str, state: RenderState) -> str:
-	state.alias_counter += 1
-	return f'({source}) qry_alias_{state.alias_counter}'
-
 @dataclass
 class Filter:
 	env: Environment
 	expr: Expr
 
-	def render(self, source: str, state: RenderState) -> str:
-		return f'select * from {render_subquery(source, state)} where {sql_interpret(self.env, self.expr)}'
+	def render(self, state: RenderState) -> RenderState:
+		return state.copy(f'select * from {state.subquery()} where {sql_interpret(self.env, self.expr)}', {})
 
 @dataclass
 class Count:
-	def render(self, source: str, state: RenderState) -> str:
-		return f'select count(*) from {render_subquery(source, state)}'
+	def render(self, state: RenderState) -> RenderState:
+		return state.copy(f'select count(*) from {state.subquery()}', {})
 
 class JoinType(Enum):
 	CROSS = "cross"
@@ -119,8 +130,9 @@ class Join:
 	type: JoinType
 	rhs: QueryPipeline
 
-	def render(self, source: str, state: RenderState) -> str:
-		return f'select * from {render_subquery(source, state)} {self.type.value} join {render_subquery(self.rhs.render(state), state)}'
+	def render(self, state: RenderState) -> RenderState:
+		join_state = self.rhs.render(state.substate())
+		return state.copy(f'select * from {state.subquery()} {self.type.value} join {join_state.subquery()}', {})
 
 @export
 @dataclass
@@ -135,7 +147,7 @@ class Aggregate:
 	by: Grouping
 	aggregations: Dict[str, Expr]
 
-	def render(self, source: str, state: RenderState) -> str:
+	def render(self, state: RenderState) -> RenderState:
 		names = [sql_interpret(self.by.env, e, constrain_to = IdentExpr) for e in self.by.names]
 		grouping_expr = ', '.join(names + list(self.by.computed.keys()))
 
@@ -143,7 +155,7 @@ class Aggregate:
 		select_computed = [f'{sql_interpret(self.env, c)} as {name}' for name, c in all_computations.items()]
 
 		select_expr = ', '.join(names + select_computed)
-		return f'select {select_expr} from {render_subquery(source, state)} group by {grouping_expr}'
+		return state.copy(f'select {select_expr} from {state.subquery()} group by {grouping_expr}', {})
 
 @dataclass
 class Select:
@@ -151,20 +163,25 @@ class Select:
 	selection: List[Expr]
 	computed: Dict[str, Expr]
 
-	def render(self, source: str, state: RenderState) -> str:
-		names = [sql_interpret(self.env, e, constrain_to = IdentExpr) for e in self.selection]
+	def render(self, state: RenderState) -> RenderState:
+		if self.selection:
+			names = [sql_interpret(self.env, e, constrain_to = IdentExpr) for e in self.selection]
+		else:
+			names = list(state.columns.keys())
+
 		select_computed = [f'{sql_interpret(self.env, c)} as {name}' for name, c in self.computed.items()]
 		select_expr = ', '.join(names + select_computed)
-		return f'select {select_expr} from {render_subquery(source, state)}'
+
+		return state.copy(f'select {select_expr} from {state.subquery()}', {})
 
 @dataclass
 class From:
 	table: str
 	columns: Dict[str, ColumnMetadata]
 
-	def render(self, source: str, state: RenderState) -> str:
-		state.columns.update(self.columns)
-		return f'select * from {self.table}'
+	def render(self, state: RenderState) -> RenderState:
+		names = ', '.join(self.columns.keys())
+		return state.copy(f'select {names} from {self.table}', self.columns)
 
 @export
 def execute(conn: Connection, sql: str) -> int:

@@ -57,6 +57,12 @@ data_exprs = [
 	''', 1),
 	(f'''
 	get_table(conn, "{table_name('my_table')}")
+		|> mutate(new_col = 1)
+		|> collect()
+		|> num_cols()
+	''', 3),
+	(f'''
+	get_table(conn, "{table_name('my_table')}")
 		|> select(name)
 		|> collect()
 		|> num_cols()
