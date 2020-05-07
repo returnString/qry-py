@@ -54,6 +54,14 @@ def negate_logical(a: Any) -> Any:
 def negate_arithmetic(a: Any) -> Any:
 	return NotImplemented
 
+@method
+def and_(a: Any, b: Any) -> Any:
+	return NotImplemented
+
+@method
+def or_(a: Any, b: Any) -> Any:
+	return NotImplemented
+
 @add
 def string_concat(a: String, b: String) -> String:
 	return String(a.val + b.val)
@@ -95,6 +103,8 @@ numeric_unop_impl(Float)
 negate_logical(unop(Bool, operator.not_))
 equal(binop(Bool, Bool, operator.eq))
 not_equal(binop(Bool, Bool, operator.ne))
+and_(binop(Bool, Bool, operator.and_))
+or_(binop(Bool, Bool, operator.or_))
 
 @export
 @method
@@ -182,6 +192,8 @@ binop_lookup = {
 	BinaryOp.GREATER_THAN_OR_EQUAL: greater_than_or_equal,
 	BinaryOp.LESS_THAN: less_than,
 	BinaryOp.LESS_THAN_OR_EQUAL: less_than_or_equal,
+	BinaryOp.AND: and_,
+	BinaryOp.OR: or_,
 }
 
 unop_lookup = {

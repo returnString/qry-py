@@ -4,7 +4,7 @@ from qry.common import export
 from qry.runtime import Environment, QryRuntimeError, InterpreterHooks
 from qry.lang import *
 
-_sql_binop_translation = {
+_sql_binop_symbol_overrides = {
 	BinaryOp.EQUAL: '=',
 	BinaryOp.NOT_EQUAL: '<>',
 	BinaryOp.AND: 'and',
@@ -24,8 +24,8 @@ def sql_interpret(env: Environment, expr: Expr, constrain_to: Union[type, Tuple[
 		raise QryRuntimeError(f'expected expr of type: {constrain_to}')
 
 	if isinstance(expr, BinaryOpExpr):
-		op = _sql_binop_translation.get(expr.op, expr.op.value)
-		return f'{sql_interpret(env, expr.lhs)} {op} {sql_interpret(env, expr.rhs)}'
+		symbol = _sql_binop_symbol_overrides.get(expr.op, expr.op.value)
+		return f'{sql_interpret(env, expr.lhs)} {symbol} {sql_interpret(env, expr.rhs)}'
 	elif isinstance(expr, IdentExpr):
 		return expr.value
 	elif isinstance(expr, CallExpr):

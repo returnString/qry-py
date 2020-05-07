@@ -48,8 +48,9 @@ class BinaryOp(Enum):
 
 	PIPE = '|>'
 
-	AND = "&&"
-	OR = "||"
+	# TODO: short-circuiting variants
+	AND = "&"
+	OR = "|"
 
 _binary_ops_without_spaces = {
 	BinaryOp.ACCESS,

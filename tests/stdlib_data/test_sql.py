@@ -44,7 +44,7 @@ data_exprs = [
 	(f'''
 	max_age <- 26
 	get_table(conn, "{table_name('my_table')}")
-		|> filter(name != "ruan" && name != "ruanlater")
+		|> filter(name != "ruan" & name != "ruanlater")
 		|> collect()
 		|> num_rows()
 	''', 1),
