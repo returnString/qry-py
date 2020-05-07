@@ -3,7 +3,8 @@ import psycopg2
 from qry.common import export
 from qry.lang import String, Int, Float, Bool
 
-from .sql import Connection, metadata_from_typecode_lookup
+from .sql_connection import Connection
+from .sql import metadata_from_typecode_lookup
 
 _oid_map = {
 	# ints

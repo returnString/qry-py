@@ -78,6 +78,12 @@ data_exprs = [
 		|> select(1 + 1)
 		|> collect()
 	''', QryRuntimeError('expected expr of type:')),
+	(f'''
+	get_table(conn, "{table_name('my_table')}")
+		|> filter(name == "ru" + "an")
+		|> collect()
+		|> num_rows()
+	''', 1),
 ]
 
 def data_test(connect_code: str) -> Any:

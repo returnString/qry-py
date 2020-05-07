@@ -5,8 +5,7 @@ import sqlite3
 from qry.common import export
 from qry.lang import String, Int, Float, Bool
 
-from .sql import Connection
-from .sql_codegen import ColumnMetadata
+from .sql_connection import Connection, ColumnMetadata
 
 _affinity_map = {
 	'text': String,

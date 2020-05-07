@@ -10,21 +10,8 @@ from qry.lang import Expr, IdentExpr
 from qry.runtime import Environment, QryRuntimeError
 
 from .dataframe import DataFrame
-from .sql_codegen import sql_interpret, ColumnMetadata
-
-class DBCursor(Protocol):
-	def execute(self, sql: str, parameters: Iterable[Any] = ...) -> 'DBCursor':
-		...
-
-	def fetchall(self) -> Any:
-		...
-
-	description: Any
-	rowcount: int
-
-class DBConn(Protocol):
-	def cursor(self, cursorClass: Optional[type] = ...) -> DBCursor:
-		...
+from .sql_codegen import sql_interpret
+from .sql_connection import Connection, ColumnMetadata, DBCursor
 
 def metadata_from_typecode_lookup(types: Dict[Any, type]) -> Any:
 	def _get_type(typecode: Any) -> type:
@@ -42,28 +29,23 @@ def metadata_from_typecode_lookup(types: Dict[Any, type]) -> Any:
 
 	return _get_table_metadata
 
-@export
-@dataclass
-class Connection:
-	c: DBConn
-	get_table_metadata: Callable[['Connection', str], Dict[str, ColumnMetadata]]
-
 @dataclass
 class RenderStateCounter:
 	_alias: int
 
 @dataclass
 class RenderState:
+	conn: Connection
 	query: str
 	columns: Dict[str, ColumnMetadata]
 	counter: RenderStateCounter
 
 	def substate(self) -> 'RenderState':
-		return RenderState('', {}, self.counter)
+		return RenderState(self.conn, '', {}, self.counter)
 
 	def copy(self, new_query: str, columns: Dict[str, ColumnMetadata]) -> 'RenderState':
 		assert len(columns)
-		return RenderState(new_query, columns, self.counter)
+		return RenderState(self.conn, new_query, columns, self.counter)
 
 	def subquery(self) -> str:
 		self.counter._alias += 1
@@ -76,13 +58,13 @@ class QueryStep(Protocol):
 @export
 @dataclass
 class QueryPipeline:
-	cursor: DBCursor
+	conn: Connection
 	steps: List[QueryStep]
 
 	def chain(self, step: QueryStep) -> 'QueryPipeline':
 		steps = self.steps.copy()
 		steps.append(step)
-		return QueryPipeline(self.cursor, steps)
+		return QueryPipeline(self.conn, steps)
 
 	def render(self, parent_state: RenderState) -> RenderState:
 		state = parent_state.substate()
@@ -91,10 +73,11 @@ class QueryPipeline:
 		return state
 
 	def execute(self) -> DataFrame:
-		state = self.render(RenderState('', {}, RenderStateCounter(0)))
-		self.cursor.execute(state.query)
-		column_names = [desc[0] for desc in self.cursor.description]
-		rows = self.cursor.fetchall()
+		state = self.render(RenderState(self.conn, '', {}, RenderStateCounter(0)))
+		cursor = self.conn.c.cursor()
+		cursor.execute(state.query)
+		column_names = [desc[0] for desc in cursor.description]
+		rows = cursor.fetchall()
 		column_data: List[Any] = [[] for c in column_names]
 
 		for row_index, row in enumerate(rows):
@@ -111,7 +94,7 @@ class Filter:
 	expr: Expr
 
 	def render(self, state: RenderState) -> RenderState:
-		_, filter_expr = sql_interpret(self.env, self.expr, state.columns)
+		_, filter_expr = sql_interpret(state.conn, self.env, self.expr, state.columns)
 		return state.copy(f'select * from {state.subquery()} where {filter_expr}', state.columns)
 
 @dataclass
@@ -150,14 +133,17 @@ class Aggregate:
 
 	def render(self, state: RenderState) -> RenderState:
 		grouping_col_details = [
-			sql_interpret(self.by.env, e, state.columns, constrain_to = IdentExpr) for e in self.by.names
+			sql_interpret(state.conn, self.by.env, e, state.columns, constrain_to = IdentExpr) for e in self.by.names
 		]
 		names = [c[1] for c in grouping_col_details]
 		grouping_expr = ', '.join(names + list(self.by.computed.keys()))
 
 		all_computations = {**self.by.computed, **self.aggregations}
 
-		computed_col_details = {name: sql_interpret(self.env, c, state.columns) for name, c in all_computations.items()}
+		computed_col_details = {
+			name: sql_interpret(state.conn, self.env, c, state.columns)
+			for name, c in all_computations.items()
+		}
 		select_computed = [f'{c[1]} as {name}' for name, c in computed_col_details.items()]
 
 		select_expr = ', '.join(names + select_computed)
@@ -177,14 +163,17 @@ class Select:
 	def render(self, state: RenderState) -> RenderState:
 		if self.selection:
 			selection_details = [
-				sql_interpret(self.env, e, state.columns, constrain_to = IdentExpr) for e in self.selection
+				sql_interpret(state.conn, self.env, e, state.columns, constrain_to = IdentExpr) for e in self.selection
 			]
 			names = [s[1] for s in selection_details]
 		else:
 			selection_details = [(meta, name) for name, meta in state.columns.items()]
 			names = list(state.columns.keys())
 
-		computed_col_details = {name: sql_interpret(self.env, c, state.columns) for name, c in self.computed.items()}
+		computed_col_details = {
+			name: sql_interpret(state.conn, self.env, c, state.columns)
+			for name, c in self.computed.items()
+		}
 		select_computed = [f'{c[1]} as {name}' for name, c in computed_col_details.items()]
 		select_expr = ', '.join(names + select_computed)
 
@@ -212,11 +201,9 @@ def execute(conn: Connection, sql: str) -> int:
 
 @export
 def get_table(conn: Connection, table: str) -> QueryPipeline:
-	cursor = conn.c.cursor()
-
 	metadata_func = conn.get_table_metadata
 	metadata = metadata_func(conn, table) # type: ignore
-	return QueryPipeline(cursor, [From(table, metadata)])
+	return QueryPipeline(conn, [From(table, metadata)])
 
 @export
 def filter(_env: Environment, query: QueryPipeline, expr: Expr) -> QueryPipeline:
