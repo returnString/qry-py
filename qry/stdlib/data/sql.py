@@ -6,12 +6,11 @@ from enum import Enum, auto
 import pyarrow
 
 from qry.common import export
-from qry.lang import *
-from qry.runtime import Environment, QryRuntimeError, InterpreterHooks
+from qry.lang import Expr, IdentExpr
+from qry.runtime import Environment, QryRuntimeError
 
 from .dataframe import DataFrame
-
-qry_hooks: InterpreterHooks
+from .sql_codegen import sql_interpret
 
 class DBCursor(Protocol):
 	def execute(self, sql: str, parameters: Iterable[Any] = ...) -> 'DBCursor':
@@ -166,40 +165,6 @@ class From:
 	def render(self, source: str, state: RenderState) -> str:
 		state.columns.update(self.columns)
 		return f'select * from {self.table}'
-
-_sql_binop_translation = {
-	BinaryOp.EQUAL: '=',
-	BinaryOp.NOT_EQUAL: '<>',
-	BinaryOp.AND: 'and',
-	BinaryOp.OR: 'or',
-}
-
-def sql_interpret_value(value: Any) -> str:
-	if isinstance(value, String):
-		return f'\'{value.val}\''
-	elif isinstance(value, (Int, Float, Bool)):
-		return str(value.val)
-
-	raise Exception(f'unhandled value for sql: {value}')
-
-def sql_interpret(env: Environment, expr: Expr, constrain_to: Union[type, Tuple[type, ...]] = (Expr, )) -> str:
-	if not isinstance(expr, constrain_to):
-		raise QryRuntimeError(f'expected expr of type: {constrain_to}')
-
-	if isinstance(expr, BinaryOpExpr):
-		op = _sql_binop_translation.get(expr.op, expr.op.value)
-		return f'{sql_interpret(env, expr.lhs)} {op} {sql_interpret(env, expr.rhs)}'
-	elif isinstance(expr, IdentExpr):
-		return expr.value
-	elif isinstance(expr, CallExpr):
-		args = ', '.join([sql_interpret(env, a) for a in expr.positional_args])
-		return f'{sql_interpret(env, expr.func)}({args})'
-	elif isinstance(expr, (StringLiteral, IntLiteral, FloatLiteral, BoolLiteral)):
-		return sql_interpret_value(expr.value)
-	elif isinstance(expr, InterpolateExpr):
-		return sql_interpret_value(qry_hooks.eval_in_env(expr, env))
-
-	raise Exception(f'unhandled expr for sql: {expr}')
 
 @export
 def execute(conn: Connection, sql: str) -> int:

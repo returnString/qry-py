@@ -1,10 +1,8 @@
 from typing import Callable, Any
 
-from qry.runtime import Environment, InterpreterHooks
+from qry.runtime import Environment, Library
 from qry.common import export
 
-qry_hooks: InterpreterHooks
-
 @export
-def attach(_env: Environment, library: Any) -> None:
-	qry_hooks.attach_library(_env, library)
+def attach(_env: Environment, library: Library) -> None:
+	_env.interpreter_hooks.attach_library(_env, library)

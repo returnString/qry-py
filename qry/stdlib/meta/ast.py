@@ -7,8 +7,6 @@ from qry.lang import Expr
 
 from qry.stdlib.ops import to_string
 
-qry_hooks: InterpreterHooks
-
 @export
 @dataclass
 class AST:
@@ -21,4 +19,4 @@ def get_ast(_env: Environment, expr: Expr) -> AST:
 
 @export
 def eval_ast(ast: AST) -> Any:
-	return qry_hooks.eval_in_env(ast.root, ast.env)
+	return ast.env.eval(ast.root)
