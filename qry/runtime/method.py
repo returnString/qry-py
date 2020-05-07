@@ -1,4 +1,4 @@
-from typing import List, Any, Dict, Callable
+from typing import List, Any, Dict, Callable, Tuple
 from dataclasses import dataclass, field
 from inspect import getmodule
 
@@ -32,9 +32,12 @@ class Method:
 
 		return wrapper
 
+	def resolve(self, arg_types: List[type], type_params: List[type] = []) -> Tuple[str, BuiltinFunction]:
+		sig = _method_sig((type_params + [py_to_qry_type(a) for a in arg_types]))
+		return sig, self.funcs.get(sig, self.default_func)
+
 	def call(self, args: List[Any], type_params: List[type] = []) -> Any:
-		sig = _method_sig((type_params + [py_to_qry_type(type(a)) for a in args]))
-		func = self.funcs.get(sig, self.default_func)
+		sig, func = self.resolve([type(a) for a in args], type_params)
 
 		# supply unhandled types as actual args for fallback generic dispatch
 		if func == self.default_func and len(type_params):
