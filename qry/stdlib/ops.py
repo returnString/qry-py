@@ -66,45 +66,45 @@ def or_(a: Any, b: Any) -> Any:
 def string_concat(a: String, b: String) -> String:
 	return String(a.val + b.val)
 
-def binop(a_type: type, b_type: type, op: Callable[[Any, Any], Any]) -> Any:
-	def impl(a: a_type, b: b_type) -> Any: # type: ignore
+def binop(a_type: type, b_type: type, return_type: type, op: Callable[[Any, Any], Any]) -> Any:
+	def impl(a: a_type, b: b_type) -> return_type: # type: ignore
 		return from_py(op(a.val, b.val)) # type: ignore
 
 	return impl
 
-def unop(a_type: type, op: Callable[[Any], Any]) -> Any:
-	def impl(a: a_type) -> Any: # type: ignore
+def unop(a_type: type, return_type: type, op: Callable[[Any], Any]) -> Any:
+	def impl(a: a_type) -> return_type: # type: ignore
 		return from_py(op(a.val)) # type: ignore
 
 	return impl
 
-def numeric_binop_impl(a_type: type, b_type: type) -> None:
-	add(binop(a_type, b_type, operator.add))
-	subtract(binop(a_type, b_type, operator.sub))
-	divide(binop(a_type, b_type, operator.truediv))
-	multiply(binop(a_type, b_type, operator.mul))
-	equal(binop(a_type, b_type, operator.eq))
-	not_equal(binop(a_type, b_type, operator.ne))
-	greater_than(binop(a_type, b_type, operator.gt))
-	greater_than_or_equal(binop(a_type, b_type, operator.ge))
-	less_than(binop(a_type, b_type, operator.lt))
-	less_than_or_equal(binop(a_type, b_type, operator.le))
+def numeric_binop_impl(a_type: type, b_type: type, return_type: type) -> None:
+	add(binop(a_type, b_type, return_type, operator.add))
+	subtract(binop(a_type, b_type, return_type, operator.sub))
+	divide(binop(a_type, b_type, return_type, operator.truediv))
+	multiply(binop(a_type, b_type, return_type, operator.mul))
+	equal(binop(a_type, b_type, Bool, operator.eq))
+	not_equal(binop(a_type, b_type, Bool, operator.ne))
+	greater_than(binop(a_type, b_type, Bool, operator.gt))
+	greater_than_or_equal(binop(a_type, b_type, Bool, operator.ge))
+	less_than(binop(a_type, b_type, Bool, operator.lt))
+	less_than_or_equal(binop(a_type, b_type, Bool, operator.le))
 
 def numeric_unop_impl(a_type: type) -> None:
-	negate_arithmetic(unop(a_type, operator.neg))
+	negate_arithmetic(unop(a_type, a_type, operator.neg))
 
-numeric_binop_impl(Int, Int)
-numeric_binop_impl(Float, Float)
-numeric_binop_impl(Int, Float)
-numeric_binop_impl(Float, Int)
+numeric_binop_impl(Int, Int, Int)
+numeric_binop_impl(Float, Float, Float)
+numeric_binop_impl(Int, Float, Float)
+numeric_binop_impl(Float, Int, Float)
 numeric_unop_impl(Int)
 numeric_unop_impl(Float)
 
-negate_logical(unop(Bool, operator.not_))
-equal(binop(Bool, Bool, operator.eq))
-not_equal(binop(Bool, Bool, operator.ne))
-and_(binop(Bool, Bool, operator.and_))
-or_(binop(Bool, Bool, operator.or_))
+negate_logical(unop(Bool, Bool, operator.not_))
+equal(binop(Bool, Bool, Bool, operator.eq))
+not_equal(binop(Bool, Bool, Bool, operator.ne))
+and_(binop(Bool, Bool, Bool, operator.and_))
+or_(binop(Bool, Bool, Bool, operator.or_))
 
 @export
 @method
