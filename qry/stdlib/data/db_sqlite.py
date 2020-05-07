@@ -3,12 +3,13 @@ from typing import Dict
 import sqlite3
 
 from qry.common import export
+from qry.lang import String, Int, Float, Bool
 
-from .sql import Connection, DBType, ColumnMetadata
+from .sql import Connection, ColumnMetadata
 
 _affinity_map = {
-	'text': DBType.STRING,
-	'integer': DBType.INT,
+	'text': String,
+	'integer': Int,
 }
 
 def _sqlite_metadata(conn: Connection, table: str) -> Dict[str, ColumnMetadata]:

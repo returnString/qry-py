@@ -27,13 +27,8 @@ class DBConn(Protocol):
 	def cursor(self, cursorClass: Optional[type] = ...) -> DBCursor:
 		...
 
-class DBType(Enum):
-	STRING = auto()
-	INT = auto()
-	FLOAT = auto()
-
-def metadata_from_typecode_lookup(types: Dict[Any, DBType]) -> Any:
-	def _get_type(typecode: Any) -> DBType:
+def metadata_from_typecode_lookup(types: Dict[Any, type]) -> Any:
+	def _get_type(typecode: Any) -> type:
 		ret = types.get(typecode)
 		if not ret:
 			raise QryRuntimeError(f'unhandled typecode: {typecode}')
@@ -50,7 +45,7 @@ def metadata_from_typecode_lookup(types: Dict[Any, DBType]) -> Any:
 
 @dataclass
 class ColumnMetadata:
-	type: DBType
+	type: type
 
 @export
 @dataclass

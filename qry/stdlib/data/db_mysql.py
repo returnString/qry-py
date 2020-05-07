@@ -2,15 +2,16 @@ import MySQLdb
 from MySQLdb import FIELD_TYPE
 
 from qry.common import export
+from qry.lang import String, Int, Float, Bool
 
-from .sql import Connection, DBType, metadata_from_typecode_lookup
+from .sql import Connection, metadata_from_typecode_lookup
 
 _typecode_map = {
-	FIELD_TYPE.VAR_STRING: DBType.STRING,
-	FIELD_TYPE.VARCHAR: DBType.STRING,
-	FIELD_TYPE.STRING: DBType.STRING,
-	FIELD_TYPE.SHORT: DBType.INT,
-	FIELD_TYPE.LONG: DBType.INT,
+	FIELD_TYPE.VAR_STRING: String,
+	FIELD_TYPE.VARCHAR: String,
+	FIELD_TYPE.STRING: String,
+	FIELD_TYPE.SHORT: Int,
+	FIELD_TYPE.LONG: Int,
 }
 
 @export
