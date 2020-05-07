@@ -62,10 +62,6 @@ def and_(a: Any, b: Any) -> Any:
 def or_(a: Any, b: Any) -> Any:
 	return NotImplemented
 
-@add
-def string_concat(a: String, b: String) -> String:
-	return String(a.val + b.val)
-
 def binop(a_type: type, b_type: type, return_type: type, op: Callable[[Any, Any], Any]) -> Any:
 	def impl(a: a_type, b: b_type) -> return_type: # type: ignore
 		return from_py(op(a.val, b.val)) # type: ignore
@@ -78,17 +74,20 @@ def unop(a_type: type, return_type: type, op: Callable[[Any], Any]) -> Any:
 
 	return impl
 
+def equality_ops(a_type: type, b_type: type) -> None:
+	equal(binop(a_type, b_type, Bool, operator.eq))
+	not_equal(binop(a_type, b_type, Bool, operator.ne))
+
 def numeric_binop_impl(a_type: type, b_type: type, return_type: type) -> None:
 	add(binop(a_type, b_type, return_type, operator.add))
 	subtract(binop(a_type, b_type, return_type, operator.sub))
 	divide(binop(a_type, b_type, return_type, operator.truediv))
 	multiply(binop(a_type, b_type, return_type, operator.mul))
-	equal(binop(a_type, b_type, Bool, operator.eq))
-	not_equal(binop(a_type, b_type, Bool, operator.ne))
 	greater_than(binop(a_type, b_type, Bool, operator.gt))
 	greater_than_or_equal(binop(a_type, b_type, Bool, operator.ge))
 	less_than(binop(a_type, b_type, Bool, operator.lt))
 	less_than_or_equal(binop(a_type, b_type, Bool, operator.le))
+	equality_ops(a_type, b_type)
 
 def numeric_unop_impl(a_type: type) -> None:
 	negate_arithmetic(unop(a_type, a_type, operator.neg))
@@ -101,10 +100,12 @@ numeric_unop_impl(Int)
 numeric_unop_impl(Float)
 
 negate_logical(unop(Bool, Bool, operator.not_))
-equal(binop(Bool, Bool, Bool, operator.eq))
-not_equal(binop(Bool, Bool, Bool, operator.ne))
 and_(binop(Bool, Bool, Bool, operator.and_))
 or_(binop(Bool, Bool, Bool, operator.or_))
+equality_ops(Bool, Bool)
+
+add(binop(String, String, String, operator.add))
+equality_ops(String, String)
 
 @export
 @method
