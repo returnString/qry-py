@@ -2,7 +2,7 @@ from typing import Any, Callable
 import operator
 import builtins
 
-from qry.lang import String, Int, Float, Bool
+from qry.lang import String, Int, Float, Bool, BinaryOp, UnaryOp
 from qry.common import export
 from qry.runtime import method, from_py, FunctionBase, Function, BuiltinFunction, Method, Library, TypeParam, Environment
 
@@ -170,3 +170,21 @@ def float_to_int(obj: Float) -> int:
 @cast.generic(Float)
 def int_to_float(obj: Int) -> float:
 	return float(obj.val)
+
+binop_lookup = {
+	BinaryOp.ADD: add,
+	BinaryOp.SUBTRACT: subtract,
+	BinaryOp.DIVIDE: divide,
+	BinaryOp.MULTIPLY: multiply,
+	BinaryOp.EQUAL: equal,
+	BinaryOp.NOT_EQUAL: not_equal,
+	BinaryOp.GREATER_THAN: greater_than,
+	BinaryOp.GREATER_THAN_OR_EQUAL: greater_than_or_equal,
+	BinaryOp.LESS_THAN: less_than,
+	BinaryOp.LESS_THAN_OR_EQUAL: less_than_or_equal,
+}
+
+unop_lookup = {
+	UnaryOp.NEGATE_LOGICAL: negate_logical,
+	UnaryOp.NEGATE_ARITH: negate_arithmetic,
+}

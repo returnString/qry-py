@@ -10,24 +10,6 @@ from qry.lang import coretypes
 from qry.runtime import Environment, QryRuntimeError, Library, to_py, from_py
 from qry.runtime import Method, Function, BuiltinFunction, Argument, ArgumentMode
 
-_eager_binop_lookup = {
-	BinaryOp.ADD: ops.add,
-	BinaryOp.SUBTRACT: ops.subtract,
-	BinaryOp.DIVIDE: ops.divide,
-	BinaryOp.MULTIPLY: ops.multiply,
-	BinaryOp.EQUAL: ops.equal,
-	BinaryOp.NOT_EQUAL: ops.not_equal,
-	BinaryOp.GREATER_THAN: ops.greater_than,
-	BinaryOp.GREATER_THAN_OR_EQUAL: ops.greater_than_or_equal,
-	BinaryOp.LESS_THAN: ops.less_than,
-	BinaryOp.LESS_THAN_OR_EQUAL: ops.less_than_or_equal,
-}
-
-_eager_unop_lookup = {
-	UnaryOp.NEGATE_LOGICAL: ops.negate_logical,
-	UnaryOp.NEGATE_ARITH: ops.negate_arithmetic,
-}
-
 class Interpreter:
 	root_env: Environment
 	global_env: Environment
@@ -102,7 +84,7 @@ class Interpreter:
 		else:
 			lhs = self.eval_in_env(expr.lhs, env)
 			rhs = self.eval_in_env(expr.rhs, env)
-			method = _eager_binop_lookup[expr.op]
+			method = ops.binop_lookup[expr.op]
 			return method.call([lhs, rhs])
 
 		raise QryRuntimeError(f'unsupported binary op: {expr.op}')
@@ -115,7 +97,7 @@ class Interpreter:
 
 	def eval_UnaryOpExpr(self, expr: UnaryOpExpr, env: Environment) -> Any:
 		arg = self.eval_in_env(expr.arg, env)
-		method = _eager_unop_lookup[expr.op]
+		method = ops.unop_lookup[expr.op]
 		return method.call([arg])
 
 	def eval_BoolLiteral(self, expr: BoolLiteral, env: Environment) -> Any:
