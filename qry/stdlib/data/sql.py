@@ -10,7 +10,7 @@ from qry.lang import Expr, IdentExpr
 from qry.runtime import Environment, QryRuntimeError
 
 from .dataframe import DataFrame
-from .sql_codegen import sql_interpret
+from .sql_codegen import sql_interpret, ColumnMetadata
 
 class DBCursor(Protocol):
 	def execute(self, sql: str, parameters: Iterable[Any] = ...) -> 'DBCursor':
@@ -42,10 +42,6 @@ def metadata_from_typecode_lookup(types: Dict[Any, type]) -> Any:
 
 	return _get_table_metadata
 
-@dataclass
-class ColumnMetadata:
-	type: type
-
 @export
 @dataclass
 class Connection:
@@ -66,6 +62,7 @@ class RenderState:
 		return RenderState('', {}, self.counter)
 
 	def copy(self, new_query: str, columns: Dict[str, ColumnMetadata]) -> 'RenderState':
+		assert len(columns)
 		return RenderState(new_query, columns, self.counter)
 
 	def subquery(self) -> str:
@@ -114,7 +111,8 @@ class Filter:
 	expr: Expr
 
 	def render(self, state: RenderState) -> RenderState:
-		return state.copy(f'select * from {state.subquery()} where {sql_interpret(self.env, self.expr)}', {})
+		_, filter_expr = sql_interpret(self.env, self.expr, state.columns)
+		return state.copy(f'select * from {state.subquery()} where {filter_expr}', state.columns)
 
 @dataclass
 class Count:
@@ -132,7 +130,10 @@ class Join:
 
 	def render(self, state: RenderState) -> RenderState:
 		join_state = self.rhs.render(state.substate())
-		return state.copy(f'select * from {state.subquery()} {self.type.value} join {join_state.subquery()}', {})
+		return state.copy(f'select * from {state.subquery()} {self.type.value} join {join_state.subquery()}', {
+			**state.columns,
+			**join_state.columns,
+		})
 
 @export
 @dataclass
@@ -148,14 +149,24 @@ class Aggregate:
 	aggregations: Dict[str, Expr]
 
 	def render(self, state: RenderState) -> RenderState:
-		names = [sql_interpret(self.by.env, e, constrain_to = IdentExpr) for e in self.by.names]
+		grouping_col_details = [
+			sql_interpret(self.by.env, e, state.columns, constrain_to = IdentExpr) for e in self.by.names
+		]
+		names = [c[1] for c in grouping_col_details]
 		grouping_expr = ', '.join(names + list(self.by.computed.keys()))
 
 		all_computations = {**self.by.computed, **self.aggregations}
-		select_computed = [f'{sql_interpret(self.env, c)} as {name}' for name, c in all_computations.items()]
+
+		computed_col_details = {name: sql_interpret(self.env, c, state.columns) for name, c in all_computations.items()}
+		select_computed = [f'{c[1]} as {name}' for name, c in computed_col_details.items()]
 
 		select_expr = ', '.join(names + select_computed)
-		return state.copy(f'select {select_expr} from {state.subquery()} group by {grouping_expr}', {})
+		return state.copy(f'select {select_expr} from {state.subquery()} group by {grouping_expr}', {
+			**{c[1]: c[0]
+			for c in grouping_col_details},
+			**{name: c[0]
+			for name, c in computed_col_details.items()},
+		})
 
 @dataclass
 class Select:
@@ -165,14 +176,24 @@ class Select:
 
 	def render(self, state: RenderState) -> RenderState:
 		if self.selection:
-			names = [sql_interpret(self.env, e, constrain_to = IdentExpr) for e in self.selection]
+			selection_details = [
+				sql_interpret(self.env, e, state.columns, constrain_to = IdentExpr) for e in self.selection
+			]
+			names = [s[1] for s in selection_details]
 		else:
+			selection_details = [(meta, name) for name, meta in state.columns.items()]
 			names = list(state.columns.keys())
 
-		select_computed = [f'{sql_interpret(self.env, c)} as {name}' for name, c in self.computed.items()]
+		computed_col_details = {name: sql_interpret(self.env, c, state.columns) for name, c in self.computed.items()}
+		select_computed = [f'{c[1]} as {name}' for name, c in computed_col_details.items()]
 		select_expr = ', '.join(names + select_computed)
 
-		return state.copy(f'select {select_expr} from {state.subquery()}', {})
+		return state.copy(f'select {select_expr} from {state.subquery()}', {
+			**{s[1]: s[0]
+			for s in selection_details},
+			**{name: c[0]
+			for name, c in computed_col_details.items()},
+		})
 
 @dataclass
 class From:
