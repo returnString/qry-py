@@ -35,9 +35,19 @@ class Method:
 
 		return wrapper
 
-	def resolve(self, arg_types: List[type], type_params: List[type] = []) -> Tuple[str, BuiltinFunction]:
+	def resolve(
+		self,
+		arg_types: List[type],
+		type_params: List[type] = [],
+		allow_default: bool = True,
+	) -> Tuple[str, BuiltinFunction]:
 		sig = _method_sig(type_params + [py_to_qry_type(a) for a in arg_types])
-		return sig, self.funcs.get(sig, self.default_func)
+		func = self.funcs.get(sig, self.default_func)
+
+		if not allow_default and func == self.default_func:
+			raise QryRuntimeError('default func disallowed')
+
+		return sig, func
 
 	def call(self, args: List[Any], type_params: List[type] = []) -> Any:
 		sig, func = self.resolve([type(a) for a in args], type_params)
