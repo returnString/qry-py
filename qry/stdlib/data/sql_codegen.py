@@ -40,18 +40,21 @@ def sql_interpret(
 		lhs_type, lhs = sql_interpret(env, expr.lhs, columns)
 		rhs_type, rhs = sql_interpret(env, expr.rhs, columns)
 		method = binop_lookup[expr.op]
-		func = method.resolve([lhs_type.type, rhs_type.type])
-		return (ColumnMetadata(Int), f'{lhs} {symbol} {rhs}')
+		_, func = method.resolve([lhs_type.type, rhs_type.type], allow_default = False)
+		return (ColumnMetadata(func.return_type), f'{lhs} {symbol} {rhs}')
 	elif isinstance(expr, IdentExpr):
-		return (ColumnMetadata(Int), expr.value)
+		column_value = columns[expr.value]
+		return (column_value, expr.value)
 	elif isinstance(expr, CallExpr):
 		arg_details = [sql_interpret(env, a, columns) for a in expr.positional_args]
 		args = ', '.join([a[1] for a in arg_details])
-		_, func_name = sql_interpret(env, expr.func, columns)
+		assert isinstance(expr.func, IdentExpr)
+		func_name = expr.func.value
 		return (ColumnMetadata(Int), f'{func_name}({args})')
 	elif isinstance(expr, (StringLiteral, IntLiteral, FloatLiteral, BoolLiteral)):
-		return (ColumnMetadata(Int), sql_interpret_value(expr.value))
+		return (ColumnMetadata(type(expr.value)), sql_interpret_value(expr.value))
 	elif isinstance(expr, InterpolateExpr):
-		return (ColumnMetadata(Int), sql_interpret_value(env.eval(expr)))
+		value = env.eval(expr)
+		return (ColumnMetadata(type(value)), sql_interpret_value(value))
 
 	raise Exception(f'unhandled expr for sql: {expr}')
