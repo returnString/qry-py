@@ -13,11 +13,6 @@ def eval(source: str, interpreter: Optional[Interpreter] = None) -> List[Any]:
 	ast = parser.parse(source)
 	return [to_py(interpreter.eval(e)) for e in ast]
 
-def eval_single(source: str, interpreter: Optional[Interpreter] = None) -> Any:
-	results = eval(source, interpreter)
-	assert len(results) == 1
-	return results[0]
-
 def data_driven_test(data: List[Tuple[str, Any]],
 	init_interpreter: Optional[Callable[[Interpreter], None]] = None) -> Any:
 	@pytest.mark.parametrize("source, expected_result", data)
