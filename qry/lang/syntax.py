@@ -94,21 +94,21 @@ class IntLiteral(Expr):
 	value: Int
 
 	def render(self) -> str:
-		return str(self.value)
+		return str(self.value.val)
 
 @dataclass
 class FloatLiteral(Expr):
 	value: Float
 
 	def render(self) -> str:
-		return str(self.value)
+		return str(self.value.val)
 
 @dataclass
 class BoolLiteral(Expr):
 	value: Bool
 
 	def render(self) -> str:
-		return str(self.value)
+		return str(self.value.val).lower()
 
 @dataclass
 class IdentExpr(Expr):
