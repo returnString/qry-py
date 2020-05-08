@@ -8,25 +8,31 @@ from qry.runtime import to_py, QryRuntimeError
 
 parser = Parser()
 
-def eval(source: str, interpreter: Optional[Interpreter] = None) -> List[Any]:
-	interpreter = interpreter or Interpreter()
-	ast = parser.parse(source)
-	return [to_py(interpreter.eval(e)) for e in ast]
-
-def data_driven_test(data: List[Tuple[str, Any]],
-	init_interpreter: Optional[Callable[[Interpreter], None]] = None) -> Any:
+def data_driven_test(
+	data: List[Tuple[str, Any]],
+	*,
+	libs: List[str] = [],
+	init: Optional[Callable[[Interpreter], None]] = None,
+) -> Any:
 	@pytest.mark.parametrize("source, expected_result", data)
 	def testwrapper(source: str, expected_result: Any) -> None:
 		interpreter = Interpreter()
 
-		if init_interpreter:
-			init_interpreter(interpreter)
+		def eval(source: str) -> List[Any]:
+			ast = parser.parse(source)
+			return [to_py(interpreter.eval(e)) for e in ast]
+
+		if init:
+			init(interpreter)
+
+		for lib in libs:
+			eval(f'attach({lib})')
 
 		if isinstance(expected_result, QryRuntimeError):
 			with pytest.raises(type(expected_result), match = str(expected_result)):
-				eval(source, interpreter)
+				eval(source)
 		else:
-			results = eval(source, interpreter)
+			results = eval(source)
 			if isinstance(expected_result, list):
 				assert results == expected_result
 			else:

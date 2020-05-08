@@ -17,4 +17,5 @@ test_methods = data_driven_test([
 	('generic_dispatch(Int)', 'special int'),
 	('generic_dispatch(Float)', 'Float'),
 	('generic_dispatch(String)', 'String'),
-], init_interpreter)
+],
+	init = init_interpreter)

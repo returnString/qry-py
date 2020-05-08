@@ -5,10 +5,10 @@ from qry.common import export
 from qry.runtime import Environment, QryRuntimeError, InterpreterHooks
 from qry.lang import *
 
-from qry.stdlib.core import scalar_to_vector_lookup
 from qry.stdlib.ops import binop_lookup, unop_lookup
 
 from .sql_connection import Connection, SQLExpression
+from .vector import scalar_to_vector_lookup
 
 _sql_binop_symbol_overrides = {
 	BinaryOp.EQUAL: '=',

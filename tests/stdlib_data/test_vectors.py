@@ -9,4 +9,4 @@ vector_tests = [
 	('floatvec(2, 3) |> mean()', 2.5),
 ]
 
-test_vectors = data_driven_test(vector_tests)
+test_vectors = data_driven_test(vector_tests, libs = ['data'])
