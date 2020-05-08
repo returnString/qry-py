@@ -182,6 +182,11 @@ def float_to_int(obj: Float) -> int:
 def int_to_float(obj: Int) -> float:
 	return float(obj.val)
 
+@export
+@method
+def length(a: Any) -> Any:
+	return NotImplemented
+
 binop_lookup = {
 	BinaryOp.ADD: add,
 	BinaryOp.SUBTRACT: subtract,
