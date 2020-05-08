@@ -20,14 +20,13 @@ class DBConn(Protocol):
 		...
 
 @dataclass
-class ColumnMetadata:
+class SQLExpression:
 	type: type
-
-BinopRewrite = Optional[Tuple[ColumnMetadata, str]]
+	text: str
 
 @export
 @dataclass
 class Connection:
 	c: DBConn
-	get_table_metadata: Callable[['Connection', str], Dict[str, ColumnMetadata]]
-	rewrite_binop: Optional[Callable[[BinaryOp, ColumnMetadata, str, ColumnMetadata, str], BinopRewrite]] = None
+	get_table_metadata: Callable[['Connection', str], Dict[str, type]]
+	rewrite_binop: Optional[Callable[[BinaryOp, SQLExpression, SQLExpression], Optional[SQLExpression]]] = None

@@ -10,8 +10,8 @@ from qry.lang import Expr, IdentExpr
 from qry.runtime import Environment, QryRuntimeError
 
 from .dataframe import DataFrame
-from .sql_codegen import sql_interpret
-from .sql_connection import Connection, ColumnMetadata, DBCursor
+from .sql_codegen import SQLExpressionTranslator
+from .sql_connection import Connection, DBCursor, SQLExpression
 
 def metadata_from_typecode_lookup(types: Dict[Any, type]) -> Any:
 	def _get_type(typecode: Any) -> type:
@@ -20,12 +20,12 @@ def metadata_from_typecode_lookup(types: Dict[Any, type]) -> Any:
 			raise QryRuntimeError(f'unhandled typecode: {typecode}')
 		return ret
 
-	def _get_table_metadata(conn: Connection, table: str) -> Dict[str, ColumnMetadata]:
+	def _get_table_metadata(conn: Connection, table: str) -> Dict[str, type]:
 		# FIXME: injection
 		cursor = conn.c.cursor()
 		cursor.execute(f'select * from {table} limit 0')
 		cursor.fetchall()
-		return {desc[0]: ColumnMetadata(_get_type(desc[1])) for desc in cursor.description}
+		return {desc[0]: _get_type(desc[1]) for desc in cursor.description}
 
 	return _get_table_metadata
 
@@ -37,19 +37,22 @@ class RenderStateCounter:
 class RenderState:
 	conn: Connection
 	query: str
-	columns: Dict[str, ColumnMetadata]
+	columns: Dict[str, type]
 	counter: RenderStateCounter
 
 	def substate(self) -> 'RenderState':
 		return RenderState(self.conn, '', {}, self.counter)
 
-	def copy(self, new_query: str, columns: Dict[str, ColumnMetadata]) -> 'RenderState':
+	def copy(self, new_query: str, columns: Dict[str, type]) -> 'RenderState':
 		assert len(columns)
 		return RenderState(self.conn, new_query, columns, self.counter)
 
 	def subquery(self) -> str:
 		self.counter._alias += 1
 		return f'({self.query}) qry_{self.counter._alias}'
+
+	def translator(self, env: Environment) -> SQLExpressionTranslator:
+		return SQLExpressionTranslator(self.conn, env, self.columns)
 
 class QueryStep(Protocol):
 	def render(self, state: RenderState) -> RenderState:
@@ -94,8 +97,9 @@ class Filter:
 	expr: Expr
 
 	def render(self, state: RenderState) -> RenderState:
-		_, filter_expr = sql_interpret(state.conn, self.env, self.expr, state.columns)
-		return state.copy(f'select * from {state.subquery()} where {filter_expr}', state.columns)
+		translator = state.translator(self.env)
+		filter_expr = translator.eval(self.expr)
+		return state.copy(f'select * from {state.subquery()} where {filter_expr.text}', state.columns)
 
 @dataclass
 class Count:
@@ -132,27 +136,25 @@ class Aggregate:
 	aggregations: Dict[str, Expr]
 
 	def render(self, state: RenderState) -> RenderState:
-		grouping_col_details = [
-			sql_interpret(state.conn, self.by.env, e, state.columns, constrain_to = IdentExpr) for e in self.by.names
-		]
-		names = [c[1] for c in grouping_col_details]
+		grouping_translator = state.translator(self.by.env)
+		grouping_col_details = [grouping_translator.eval(e, constrain_to = IdentExpr) for e in self.by.names]
+		names = [c.text for c in grouping_col_details]
 		grouping_expr = ', '.join(names + list(self.by.computed.keys()))
 
 		all_computations = {**self.by.computed, **self.aggregations}
 
-		computed_col_details = {
-			name: sql_interpret(state.conn, self.env, c, state.columns)
-			for name, c in all_computations.items()
-		}
-		select_computed = [f'{c[1]} as {name}' for name, c in computed_col_details.items()]
+		computed_translator = state.translator(self.env)
+		computed_col_details = {name: computed_translator.eval(c) for name, c in all_computations.items()}
+		select_computed = [f'{c.text} as {name}' for name, c in computed_col_details.items()]
 
 		select_expr = ', '.join(names + select_computed)
-		return state.copy(f'select {select_expr} from {state.subquery()} group by {grouping_expr}', {
-			**{c[1]: c[0]
+		return state.copy(
+			f'select {select_expr} from {state.subquery()} group by {grouping_expr}', {
+			**{c.text: c.type
 			for c in grouping_col_details},
-			**{name: c[0]
+			**{name: c.type
 			for name, c in computed_col_details.items()},
-		})
+			})
 
 @dataclass
 class Select:
@@ -161,33 +163,29 @@ class Select:
 	computed: Dict[str, Expr]
 
 	def render(self, state: RenderState) -> RenderState:
+		translator = state.translator(self.env)
 		if self.selection:
-			selection_details = [
-				sql_interpret(state.conn, self.env, e, state.columns, constrain_to = IdentExpr) for e in self.selection
-			]
-			names = [s[1] for s in selection_details]
+			selection_details = [translator.eval(e, constrain_to = IdentExpr) for e in self.selection]
+			names = [s.text for s in selection_details]
 		else:
-			selection_details = [(meta, name) for name, meta in state.columns.items()]
+			selection_details = [SQLExpression(t, name) for name, t in state.columns.items()]
 			names = list(state.columns.keys())
 
-		computed_col_details = {
-			name: sql_interpret(state.conn, self.env, c, state.columns)
-			for name, c in self.computed.items()
-		}
-		select_computed = [f'{c[1]} as {name}' for name, c in computed_col_details.items()]
+		computed_col_details = {name: translator.eval(c) for name, c in self.computed.items()}
+		select_computed = [f'{c.text} as {name}' for name, c in computed_col_details.items()]
 		select_expr = ', '.join(names + select_computed)
 
 		return state.copy(f'select {select_expr} from {state.subquery()}', {
-			**{s[1]: s[0]
+			**{s.text: s.type
 			for s in selection_details},
-			**{name: c[0]
+			**{name: c.type
 			for name, c in computed_col_details.items()},
 		})
 
 @dataclass
 class From:
 	table: str
-	columns: Dict[str, ColumnMetadata]
+	columns: Dict[str, type]
 
 	def render(self, state: RenderState) -> RenderState:
 		names = ', '.join(self.columns.keys())

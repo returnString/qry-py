@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Union, Dict
+from typing import Any, Tuple, Union, Dict, cast
 from dataclasses import dataclass
 
 from qry.common import export
@@ -6,7 +6,7 @@ from qry.runtime import Environment, QryRuntimeError, InterpreterHooks
 from qry.lang import *
 from qry.stdlib.ops import binop_lookup, unop_lookup
 
-from .sql_connection import Connection, ColumnMetadata
+from .sql_connection import Connection, SQLExpression
 
 _sql_binop_symbol_overrides = {
 	BinaryOp.EQUAL: '=',
@@ -28,47 +28,61 @@ def sql_interpret_value(value: Any) -> str:
 
 	raise Exception(f'unhandled value for sql: {value}')
 
-def sql_interpret(
-	conn: Connection,
-	env: Environment,
-	expr: Expr,
-	columns: Dict[str, ColumnMetadata],
-	constrain_to: Union[type, Tuple[type, ...]] = (Expr, ),
-) -> Tuple[ColumnMetadata, str]:
-	if not isinstance(expr, constrain_to):
-		raise QryRuntimeError(f'expected expr of type: {constrain_to}')
+def make_literal_eval(literal_type: type) -> Any:
+	def literal_eval(_: Any, expr: Any) -> SQLExpression:
+		return SQLExpression(type(expr.value), sql_interpret_value(expr.value))
 
-	# TODO: actually return useful metadata here
-	if isinstance(expr, BinaryOpExpr):
-		lhs_type, lhs = sql_interpret(conn, env, expr.lhs, columns)
-		rhs_type, rhs = sql_interpret(conn, env, expr.rhs, columns)
+	return literal_eval
 
-		if conn.rewrite_binop is not None:
-			rewrite_func = conn.rewrite_binop
-			ret = rewrite_func(expr.op, lhs_type, lhs, rhs_type, rhs)
+@dataclass
+class SQLExpressionTranslator:
+	conn: Connection
+	env: Environment
+	columns: Dict[str, type]
+
+	def eval(self, expr: Expr, constrain_to: Union[type, Tuple[type, ...]] = (Expr, )) -> SQLExpression:
+		if not isinstance(expr, constrain_to):
+			raise QryRuntimeError(f'expected expr of type: {constrain_to}')
+
+		eval_func = getattr(self, f'_eval_{type(expr).__name__}')
+		ret = cast(SQLExpression, eval_func(expr))
+		return ret
+
+	def _eval_BinaryOpExpr(self, expr: BinaryOpExpr) -> SQLExpression:
+		lhs = self.eval(expr.lhs)
+		rhs = self.eval(expr.rhs)
+
+		if self.conn.rewrite_binop is not None:
+			rewrite_func = self.conn.rewrite_binop
+			ret = rewrite_func(expr.op, lhs, rhs)
 			if ret:
 				return ret
 
 		default_symbol = _sql_binop_symbol_overrides.get(expr.op, expr.op.value)
-		symbol = _sql_binop_signature_symbol_overrides.get((expr.op, lhs_type.type, rhs_type.type), default_symbol)
+		symbol = _sql_binop_signature_symbol_overrides.get((expr.op, lhs.type, rhs.type), default_symbol)
 
 		method = binop_lookup[expr.op]
-		_, func = method.resolve([lhs_type.type, rhs_type.type], allow_default = False)
+		_, func = method.resolve([lhs.type, rhs.type], allow_default = False)
 
-		return (ColumnMetadata(func.return_type), f'{lhs} {symbol} {rhs}')
-	elif isinstance(expr, IdentExpr):
-		column_value = columns[expr.value]
-		return (column_value, expr.value)
-	elif isinstance(expr, CallExpr):
-		arg_details = [sql_interpret(conn, env, a, columns) for a in expr.positional_args]
-		args = ', '.join([a[1] for a in arg_details])
+		return SQLExpression(func.return_type, f'{lhs.text} {symbol} {rhs.text}')
+
+	def _eval_IdentExpr(self, expr: IdentExpr) -> SQLExpression:
+		column_value = self.columns[expr.value]
+		return SQLExpression(column_value, expr.value)
+
+	def _eval_CallExpr(self, expr: CallExpr) -> SQLExpression:
+		arg_details = [self.eval(a) for a in expr.positional_args]
+		args = ', '.join([a.text for a in arg_details])
 		assert isinstance(expr.func, IdentExpr)
 		func_name = expr.func.value
-		return (ColumnMetadata(Int), f'{func_name}({args})')
-	elif isinstance(expr, (StringLiteral, IntLiteral, FloatLiteral, BoolLiteral)):
-		return (ColumnMetadata(type(expr.value)), sql_interpret_value(expr.value))
-	elif isinstance(expr, InterpolateExpr):
-		value = env.eval(expr)
-		return (ColumnMetadata(type(value)), sql_interpret_value(value))
+		# FIXME: sort function types
+		return SQLExpression(Int, f'{func_name}({args})')
 
-	raise Exception(f'unhandled expr for sql: {expr}')
+	def _eval_InterpolateExpr(self, expr: InterpolateExpr) -> SQLExpression:
+		value = self.env.eval(expr)
+		return SQLExpression(type(value), sql_interpret_value(value))
+
+	_eval_StringLiteral = make_literal_eval(StringLiteral)
+	_eval_IntLiteral = make_literal_eval(IntLiteral)
+	_eval_FloatLiteral = make_literal_eval(FloatLiteral)
+	_eval_BoolLiteral = make_literal_eval(BoolLiteral)

@@ -5,14 +5,14 @@ import sqlite3
 from qry.common import export
 from qry.lang import String, Int, Float, Bool
 
-from .sql_connection import Connection, ColumnMetadata
+from .sql_connection import Connection
 
 _affinity_map = {
 	'text': String,
 	'integer': Int,
 }
 
-def _sqlite_metadata(conn: Connection, table: str) -> Dict[str, ColumnMetadata]:
+def _sqlite_metadata(conn: Connection, table: str) -> Dict[str, type]:
 	cursor = conn.c.cursor()
 	# FIXME: injection
 	cursor.execute(f'select * from {table} limit 0')
@@ -26,7 +26,7 @@ def _sqlite_metadata(conn: Connection, table: str) -> Dict[str, ColumnMetadata]:
 
 	ret = {}
 	for index, col_affinity in enumerate(rows[0]):
-		ret[names[index]] = ColumnMetadata(_affinity_map[col_affinity])
+		ret[names[index]] = _affinity_map[col_affinity]
 
 	return ret
 

@@ -1,10 +1,12 @@
+from typing import Optional
+
 import MySQLdb
 from MySQLdb import FIELD_TYPE
 
 from qry.common import export
 from qry.lang import String, Int, Float, Bool, BinaryOp
 
-from .sql_connection import Connection, ColumnMetadata, BinopRewrite
+from .sql_connection import Connection, SQLExpression
 from .sql import metadata_from_typecode_lookup
 
 _typecode_map = {
@@ -17,13 +19,11 @@ _typecode_map = {
 
 def _mysql_binop_rewrite(
 	op: BinaryOp,
-	lhs_meta: ColumnMetadata,
-	lhs: str,
-	rhs_meta: ColumnMetadata,
-	rhs: str,
-) -> BinopRewrite:
-	if op == BinaryOp.ADD and lhs_meta.type == String and rhs_meta.type == String:
-		return (ColumnMetadata(String), f'concat({lhs}, {rhs})')
+	lhs: SQLExpression,
+	rhs: SQLExpression,
+) -> Optional[SQLExpression]:
+	if op == BinaryOp.ADD and lhs.type == String and rhs.type == String:
+		return SQLExpression(String, f'concat({lhs.text}, {rhs.text})')
 
 	return None
 
