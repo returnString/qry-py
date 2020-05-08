@@ -5,6 +5,8 @@ vector_tests = [
 	('floatvec(0, 0) |> length()', 2),
 	('intvec(1, 2, 3) |> sum()', 6),
 	('floatvec(1.5, 1.5, 3.5) |> sum()', 6.5),
+	('intvec(1, 2, 3) |> mean()', 2),
+	('floatvec(2, 3) |> mean()', 2.5),
 ]
 
 test_vectors = data_driven_test(vector_tests)

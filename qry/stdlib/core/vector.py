@@ -36,13 +36,26 @@ def floatvec(*values: Float) -> FloatVector:
 def sum(vec: Any) -> Any:
 	return NotImplemented
 
+@export
+@method
+def mean(vec: Any) -> Any:
+	return NotImplemented
+
 @sum
 def intvec_sum(vec: IntVector) -> int:
 	return cast(int, vec.data.sum().as_py())
 
+@mean
+def intvec_mean(vec: IntVector) -> float:
+	return int(vec.data.sum().as_py()) / len(vec.data)
+
 @sum
 def floatvec_sum(vec: FloatVector) -> float:
 	return float(vec.data.sum().as_py())
+
+@mean
+def floatvec_mean(vec: FloatVector) -> float:
+	return float(vec.data.sum().as_py()) / len(vec.data)
 
 @length
 def intvec_len(vec: IntVector) -> int:
