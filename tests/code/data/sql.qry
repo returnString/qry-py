@@ -1,3 +1,5 @@
+#!/usr/bin/env qry
+
 attach(data)
 
 fn assert_df_shape(df: DataFrame, columns: Int, rows: Int) {
