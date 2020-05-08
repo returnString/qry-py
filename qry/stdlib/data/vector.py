@@ -7,20 +7,32 @@ from qry.runtime import method, TypeParam
 
 from qry.stdlib.ops import length
 
-from pyarrow import Array, Int64Array, FloatingPointArray, array
+from pyarrow import Array, Int64Array, FloatingPointArray, array, int64, float64
 
 @export
 @dataclass
-class IntVector:
-	data: Int64Array
+class Vector:
+	data: Array
 
 @export
-@dataclass
-class FloatVector:
-	data: FloatingPointArray
+class IntVector(Vector):
+	pass
+
+@export
+class FloatVector(Vector):
+	pass
 
 def _array_from_primitives(values: Iterable[Any]) -> Array:
 	return array([v.val for v in values])
+
+_arrow_to_qry_types = {
+	int64(): IntVector,
+	float64(): FloatVector,
+}
+
+def vector_from_array(arr: Array) -> Vector:
+	vec_type = _arrow_to_qry_types[arr.type]
+	return vec_type(arr)
 
 # TODO: improve method dispatch so we can have one vec method that accepts all types
 @export
