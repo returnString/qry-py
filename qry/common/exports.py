@@ -9,6 +9,13 @@ def export(obj: Any) -> Any:
 	setattr(obj, _export_attr, True)
 	return obj
 
+def export_named(name: str) -> Any:
+	def wrapper(obj: Any) -> Any:
+		setattr(obj, '__name__', name)
+		return export(obj)
+
+	return wrapper
+
 def is_exported(obj: Any) -> bool:
 	return hasattr(obj, _export_attr)
 
