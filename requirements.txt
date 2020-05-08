@@ -2,3 +2,4 @@ lark-parser==0.8
 psycopg2==2.8.4
 PyMySQL==0.9.3
 pyarrow==0.17
+cryptography==2.9.2
