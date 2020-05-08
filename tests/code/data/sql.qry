@@ -1,0 +1,26 @@
+attach(data)
+
+fn assert_df_shape(df: DataFrame, columns: Int, rows: Int) {
+	assert(num_cols(df) == columns)
+	assert(num_rows(df) == rows)
+}
+
+conn <- connect_postgres("localhost", 54321, "qrytest", "qry", "password")
+execute(conn, "drop table if exists qry_code_test")
+execute(conn, "create table qry_code_test (name varchar(255), age integer)")
+execute(conn, "insert into qry_code_test (name, age) values ('ruan', 26), ('ruanlater', 27), ('thirdperson', 27)")
+
+qry_code_test <- get_table(conn, "qry_code_test")
+
+qry_code_test
+	|> collect()
+	-> full_df
+
+assert_df_shape(full_df, 2, 3)
+
+qry_code_test
+	|> filter(name == "ruan")
+	|> collect()
+	-> filtered_df
+
+assert_df_shape(filtered_df, 2, 1)
