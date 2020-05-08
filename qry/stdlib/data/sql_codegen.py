@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from qry.common import export
 from qry.runtime import Environment, QryRuntimeError, InterpreterHooks
 from qry.lang import *
+
+from qry.stdlib.core import scalar_to_vector_lookup
 from qry.stdlib.ops import binop_lookup, unop_lookup
 
 from .sql_connection import Connection, SQLExpression
@@ -75,8 +77,15 @@ class SQLExpressionTranslator:
 		args = ', '.join([a.text for a in arg_details])
 		assert isinstance(expr.func, IdentExpr)
 		func_name = expr.func.value
-		# FIXME: sort function types
-		return SQLExpression(Int, f'{func_name}({args})')
+		method = self.env.eval(expr.func)
+
+		# we map columns of a given scalar type to their vector equivalent
+		# this allows us to use our existing vector methods for type inference
+		# e.g. sum(my_int_col) maps to core.sum(IntVector) -> Int
+		_, func = method.resolve(
+			[a.type if not self.columns.get(a.text) else scalar_to_vector_lookup[a.type] for a in arg_details])
+
+		return SQLExpression(func.return_type, f'{func_name}({args})')
 
 	def _eval_InterpolateExpr(self, expr: InterpolateExpr) -> SQLExpression:
 		value = self.env.eval(expr)

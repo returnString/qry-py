@@ -1,4 +1,4 @@
-from typing import Any, Iterable, cast
+from typing import Any, Iterable, Dict, cast
 from dataclasses import dataclass
 
 from qry.common import export
@@ -51,3 +51,8 @@ def intvec_len(vec: IntVector) -> int:
 @length
 def floatvec_len(vec: FloatVector) -> int:
 	return len(vec.data)
+
+scalar_to_vector_lookup: Dict[type, type] = {
+	Int: IntVector,
+	Float: FloatVector,
+}
