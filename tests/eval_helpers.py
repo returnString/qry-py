@@ -28,7 +28,7 @@ def data_driven_test(data: List[Tuple[str, Any]],
 			init_interpreter(interpreter)
 
 		if isinstance(expected_result, QryRuntimeError):
-			with pytest.raises(QryRuntimeError, match = str(expected_result)):
+			with pytest.raises(type(expected_result), match = str(expected_result)):
 				eval(source, interpreter)
 		else:
 			results = eval(source, interpreter)
