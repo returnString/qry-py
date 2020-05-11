@@ -17,9 +17,6 @@ class Expr(ABC):
 	def render(self) -> str:
 		pass
 
-	def children(self) -> List['Expr']:
-		return [e for e in self.__dict__.values() if isinstance(e, Expr)]
-
 @dataclass
 class AssignExpr(Expr):
 	lhs: Expr
@@ -161,10 +158,11 @@ class UseExpr(Expr):
 	imports: Union[UseWildcard, List[str]]
 
 	def render(self) -> str:
+		lib_path = '::'.join(self.libs)
 		if isinstance(self.imports, UseWildcard):
-			suffix = '*'
-		else:
-			lib_path = '::'.join(self.libs)
+			return f'{lib_path}::*'
+		elif len(self.imports):
 			imports = ', '.join(self.imports)
-			suffix = f'{{{imports}}}'
-		return f'{lib_path}::{imports}'
+			return f'{lib_path}::{{{imports}}}'
+
+		return lib_path
