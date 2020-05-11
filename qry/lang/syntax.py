@@ -17,14 +17,6 @@ class Expr(ABC):
 	def render(self) -> str:
 		pass
 
-@dataclass
-class AssignExpr(Expr):
-	lhs: Expr
-	rhs: Expr
-
-	def render(self) -> str:
-		return f'{self.lhs.render()} <- {self.rhs.render()}'
-
 class BinaryOp(Enum):
 	ADD = '+'
 	SUBTRACT = '-'
@@ -84,7 +76,7 @@ class StringLiteral(Expr):
 	value: String
 
 	def render(self) -> str:
-		return f'"{self.value}"'
+		return f'"{self.value.val}"'
 
 @dataclass
 class IntLiteral(Expr):
@@ -126,9 +118,10 @@ class FuncExpr(Expr):
 	body: List[Expr]
 
 	def render(self) -> str:
-		body = '\n'.join([e.render() for e in self.body])
-		args = ', '.join([f'{k}: {v}' for k, v in self.args.items()])
-		return f'fn({args}) {{ {body} }}'
+		body = ' '.join([e.render() for e in self.body])
+		args = ', '.join([f'{k}: {v.render()}' for k, v in self.args.items()])
+		name = f' {self.name}' if self.name else ''
+		return f'fn{name}({args}) {{ {body} }}'
 
 @dataclass
 class CallExpr(Expr):
@@ -160,9 +153,11 @@ class UseExpr(Expr):
 	def render(self) -> str:
 		lib_path = '::'.join(self.libs)
 		if isinstance(self.imports, UseWildcard):
-			return f'{lib_path}::*'
-		elif len(self.imports):
-			imports = ', '.join(self.imports)
-			return f'{lib_path}::{{{imports}}}'
+			return f'use {lib_path}::*'
 
-		return lib_path
+		if len(self.libs):
+			imports = ', '.join(self.imports)
+			return f'use {lib_path}::{{{imports}}}'
+
+		chain = '::'.join(self.imports)
+		return f'use {chain}'

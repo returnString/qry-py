@@ -20,3 +20,7 @@ def get_ast(_env: Environment, expr: Expr) -> AST:
 @export
 def eval_ast(ast: AST) -> Any:
 	return ast.env.eval(ast.root)
+
+@to_string
+def ast_to_string(ast: AST) -> str:
+	return ast.root.render()
