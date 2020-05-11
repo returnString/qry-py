@@ -26,7 +26,7 @@ def data_driven_test(
 			init(interpreter)
 
 		for lib in libs:
-			eval(f'attach({lib})')
+			eval(f'use {lib}::*')
 
 		if isinstance(expected_result, QryRuntimeError):
 			with pytest.raises(type(expected_result), match = str(expected_result)):

@@ -1,4 +1,4 @@
-start: expr*
+start: (expr | use_expr)*
 
 literal: "null" -> null_literal
 	| "true" -> bool_literal_true
@@ -31,6 +31,11 @@ block_expr: "{" expr* "}"
 func_expr: "fn" IDENT? "(" args_def ")" block_expr
 interpolate_expr: "{{" expr "}}"
 
+use_lib_chain: IDENT ("::" IDENT)*
+use_wildcard: "::*"
+use_list: "::{" IDENT? ("," IDENT)* ","? "}"
+use_expr: "use" use_lib_chain (use_wildcard | use_list)?
+
 RASSIGN_OP.2: "->"
 LASSIGN_OP.2: "<-"
 NEGATE_OP: "!" | "-"
@@ -39,7 +44,7 @@ OR_OP: "||" | "|"
 COMPARE_OP: "==" | "!=" | "<=" | ">=" | ">" | "<"
 ADD_OP: "-" | "+"
 MUL_OP: "/" | "*"
-ACCESS_OP: "."
+ACCESS_OP: "::"
 PIPE_OP.2: "|>"
 
 %import common.INT

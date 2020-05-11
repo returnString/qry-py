@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from abc import ABC, abstractmethod
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Union
 
 from .coretypes import String, Int, Float, Bool
 
@@ -41,7 +41,7 @@ class BinaryOp(Enum):
 	LESS_THAN = '<'
 	LESS_THAN_OR_EQUAL = '<='
 
-	ACCESS = '.'
+	ACCESS = '::'
 
 	LASSIGN = '<-'
 	RASSIGN = '->'
@@ -151,3 +151,20 @@ class InterpolateExpr(Expr):
 
 	def render(self) -> str:
 		return f'{{{{{self.contents.render()}}}}}'
+
+class UseWildcard:
+	pass
+
+@dataclass
+class UseExpr(Expr):
+	libs: List[str]
+	imports: Union[UseWildcard, List[str]]
+
+	def render(self) -> str:
+		if isinstance(self.imports, UseWildcard):
+			suffix = '*'
+		else:
+			lib_path = '::'.join(self.libs)
+			imports = ', '.join(self.imports)
+			suffix = f'{{{imports}}}'
+		return f'{lib_path}::{imports}'

@@ -12,10 +12,12 @@ from qry.runtime import Method, Function, BuiltinFunction, Argument, ArgumentMod
 
 class Interpreter:
 	root_env: Environment
+	library_env: Environment
 	global_env: Environment
 
 	def __init__(self) -> None:
 		self.root_env = Environment('root', dict(), self)
+		self.library_env = Environment('libraries', dict(), self)
 		self.global_env = self.root_env.child_env('global')
 		self.load_library(coretypes, True)
 		self.load_library(core, True)
@@ -48,7 +50,7 @@ class Interpreter:
 		lib_env.state.update(lib_state)
 
 		lib = Library(lib_env)
-		self.global_env.state[lib_name] = lib
+		self.library_env.state[lib_name] = lib
 
 		if attach_global:
 			self.attach_library(self.global_env, lib)
@@ -206,3 +208,14 @@ class Interpreter:
 
 	def eval_InterpolateExpr(self, expr: InterpolateExpr, env: Environment) -> Any:
 		return self.eval_in_env(expr.contents, env)
+
+	def eval_UseExpr(self, expr: UseExpr, env: Environment) -> Any:
+		lib_env = self.library_env
+		for lib_ident in expr.libs:
+			lib = lib_env.state[lib_ident]
+			assert isinstance(lib, Library)
+			lib_env = lib.environment
+
+		imports = lib_env.state.keys() if isinstance(expr.imports, UseWildcard) else expr.imports
+		for ident in imports:
+			env.state[ident] = lib_env.state[ident]

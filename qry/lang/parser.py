@@ -101,6 +101,23 @@ class ASTBuilder(Transformer): # type: ignore
 	def interpolate_expr(self, children: List[Any], meta: Any) -> Any:
 		return InterpolateExpr(self._source_info(meta), children[0])
 
+	def use_wildcard(self, children: List[Any], meta: Any) -> Any:
+		return UseWildcard()
+
+	def use_lib_chain(self, children: List[Any], meta: Any) -> Any:
+		return [c.value for c in children]
+
+	def use_list(self, children: List[Any], meta: Any) -> Any:
+		return [c.value for c in children]
+
+	def use_expr(self, children: List[Any], meta: Any) -> UseExpr:
+		if len(children) == 1:
+			last_lib = children[0][-1]
+			children.append([last_lib])
+			children[0] = children[0][:-1]
+
+		return UseExpr(self._source_info(meta), children[0], children[1])
+
 def _get_data_file(file: str) -> Path:
 	try:
 		base_path = Path(sys._MEIPASS) # type: ignore

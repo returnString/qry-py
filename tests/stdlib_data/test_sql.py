@@ -87,7 +87,7 @@ data_exprs = [
 ]
 
 def data_test(connect_code: str) -> Any:
-	tests = [('attach(data) ' + connect_code + code, expectation) for code, expectation in data_exprs]
+	tests = [('use data::* ' + connect_code + code, expectation) for code, expectation in data_exprs]
 	return data_driven_test(tests)
 
 test_sqlite = data_test('conn <- connect_sqlite("tests/artefacts/db.sqlite")')

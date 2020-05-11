@@ -1,6 +1,6 @@
 #!/usr/bin/env qry
 
-attach(data)
+use data::*
 
 fn assert_df_shape(df: DataFrame, columns: Int, rows: Int) {
 	assert(num_cols(df) == columns)
