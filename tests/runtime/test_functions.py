@@ -2,7 +2,7 @@ from ..eval_helpers import data_driven_test
 
 expressions_with_results = [
 	('''
-	add <- fn(x: Int, y: Int) {
+	add <- fn(x: Int, y: Int) -> Int {
 		x + y
 	}
 
@@ -10,14 +10,14 @@ expressions_with_results = [
 	''', 3),
 	('''
 	fixed_bonus <- 100
-	add_with_closure <- fn(x: Int, y: Int) {
+	add_with_closure <- fn(x: Int, y: Int) -> Int {
 		x + y + fixed_bonus
 	}
 
 	add_with_closure(1, 2)
 	''', 103),
 	('''
-	fn named_add(x: Int, y: Int) {
+	fn named_add(x: Int, y: Int) -> Int {
 		x + y
 	}
 

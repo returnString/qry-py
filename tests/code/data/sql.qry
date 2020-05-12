@@ -2,7 +2,7 @@
 
 use data::*
 
-fn assert_df_shape(df: DataFrame, columns: Int, rows: Int) {
+fn assert_df_shape(df: DataFrame, columns: Int, rows: Int) -> Null {
 	assert(num_cols(df) == columns)
 	assert(num_rows(df) == rows)
 }

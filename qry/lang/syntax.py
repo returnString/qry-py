@@ -115,13 +115,14 @@ class NullLiteral(Expr):
 class FuncExpr(Expr):
 	name: Optional[str]
 	args: Dict[str, Expr]
+	return_type: Expr
 	body: List[Expr]
 
 	def render(self) -> str:
 		body = ' '.join([e.render() for e in self.body])
 		args = ', '.join([f'{k}: {v.render()}' for k, v in self.args.items()])
 		name = f' {self.name}' if self.name else ''
-		return f'fn{name}({args}) {{ {body} }}'
+		return f'fn{name}({args}) -> {self.return_type.render()} {{ {body} }}'
 
 @dataclass
 class CallExpr(Expr):

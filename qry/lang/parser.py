@@ -70,11 +70,15 @@ class ASTBuilder(Transformer): # type: ignore
 	def func_expr(self, children: List[Any], meta: Any) -> FuncExpr:
 		name = None
 		child_offset = 0
-		if len(children) == 3:
+		if len(children) == 4:
 			child_offset = 1
 			name = children[0]
 
-		return FuncExpr(self._source_info(meta), name, children[child_offset], children[child_offset + 1])
+		args = children[child_offset]
+		return_type = children[child_offset + 1]
+		body = children[child_offset + 2]
+
+		return FuncExpr(self._source_info(meta), name, args, return_type, body)
 
 	def call_expr(self, children: List[Any], meta: Any) -> Any:
 		positional = []

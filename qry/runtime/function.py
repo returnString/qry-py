@@ -28,6 +28,7 @@ class Argument:
 @dataclass
 class FunctionBase:
 	args: List[Argument]
+	return_type: type
 
 @dataclass
 class Function(FunctionBase):
@@ -52,7 +53,6 @@ def _py_arg(arg_spec: inspect.FullArgSpec, name: str) -> Argument:
 class BuiltinFunction(FunctionBase):
 	func: Callable[..., Any]
 	implicit_caller_env: bool
-	return_type: type
 
 	@classmethod
 	def from_func(cls, func: Callable[..., Any]) -> 'BuiltinFunction':
@@ -72,7 +72,7 @@ class BuiltinFunction(FunctionBase):
 		args = [_py_arg(arg_spec, a) for a in arg_names]
 		return cls(
 			args,
+			return_type,
 			func,
 			implicit_caller_env,
-			return_type,
 		)

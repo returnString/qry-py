@@ -126,7 +126,8 @@ class Interpreter:
 
 	def eval_FuncExpr(self, expr: FuncExpr, env: Environment) -> Any:
 		args = [self._create_arg(name, type, env) for name, type in expr.args.items()]
-		ret = Function(args, expr.body, env.child_env('func_closure'))
+		return_type = self.eval_in_env(expr.return_type, env)
+		ret = Function(args, return_type, expr.body, env.child_env('func_closure'))
 		if expr.name is not None:
 			env.state[expr.name] = ret
 		return ret

@@ -10,7 +10,8 @@ test_syntax = data_driven_test([
 	('to_string(get_ast(use mylib))', 'use mylib'),
 	('to_string(get_ast(use mylib::*))', 'use mylib::*'),
 	('to_string(get_ast(use mylib::{thing1, thing2}))', 'use mylib::{thing1, thing2}'),
-	('to_string(get_ast(fn(x: Int, y: Int) { x + y }))', 'fn(x: Int, y: Int) { (x + y) }'),
+	('to_string(get_ast(fn(x: Int, y: Int) -> Null { x + y }))', 'fn(x: Int, y: Int) -> Null { (x + y) }'),
+	('to_string(get_ast(fn(x: Int, y: Int) -> Int { x + y }))', 'fn(x: Int, y: Int) -> Int { (x + y) }'),
 	('to_string(get_ast({{some_interpolated_expr}}))', '{{some_interpolated_expr}}'),
 ],
 	libs = ['meta'])
